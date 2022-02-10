@@ -12,7 +12,9 @@ typedef struct __json_value json_value_t;
 typedef struct __json_member json_member_t;
 typedef struct __json_element json_element_t;
 
-#define JSON_VALUE_STRING	1
+#define JSON_VALUE_OBJECT	1
+#define JSON_VALUE_ARRAY	2
+#define JSON_VALUE_STRING	3
 
 struct __json_object
 {
@@ -86,8 +88,8 @@ static void __copy_json_string(char *dest, const char *src, int len)
 			src++;
 			switch (*src)
 			{
-			case '"':
-				*dest = '"';
+			case '\"':
+				*dest = '\"';
 				break;
 			case '\\':
 				*dest = '\\';
@@ -132,7 +134,7 @@ static int __parse_json_string(const char *cursor, const char **end)
 
 	while (1)
 	{
-		if (*cursor == '"')
+		if (*cursor == '\"')
 			break;
 
 		if (!*cursor)
@@ -143,7 +145,7 @@ static int __parse_json_string(const char *cursor, const char **end)
 		{
 			switch (*cursor)
 			{
-			case '"':
+			case '\"':
 			case '\\':
 			case '/':
 			case 'b':
@@ -167,14 +169,120 @@ static int __parse_json_string(const char *cursor, const char **end)
 }
 
 static int __parse_json_value(const char *cursor, const char **end,
+							  json_value_t *val);
+
+static void __destroy_json_value(json_value_t *val);
+
+static int __parse_json_object(const char *cursor, const char **end,
+							   json_object_t *obj);
+
+static int __parse_json_elements(const char *cursor, const char **end,
+								 json_array_t *arr)
+{
+	json_element_t *elem;
+	int cnt = 0;
+	int ret;
+
+	while (isspace(*cursor))
+		cursor++;
+
+	if (*cursor == ']')
+	{
+		*end = cursor + 1;
+		return 0;
+	}
+
+	while (1)
+	{
+		elem = (json_element_t *)malloc(sizeof (json_element_t));
+		if (!elem)
+			return -1;
+
+		ret = __parse_json_value(cursor, &cursor, &elem->value);
+		if (ret < 0)
+		{
+			free(elem);
+			return -2;
+		}
+
+		list_add_tail(&elem->list, &arr->head);
+		cnt++;
+
+		if (*cursor != ',')
+		{
+			while (isspace(*cursor))
+				cursor++;
+
+			if (*cursor != ']')
+				return -2;
+
+			break;
+		}
+
+		cursor++;
+		while (isspace(*cursor))
+			cursor++;
+	}
+
+	*end = cursor + 1;
+	return cnt;
+}
+
+static void __destroy_json_elements(json_array_t *arr)
+{
+	struct list_head *pos, *tmp;
+	json_element_t *elem;
+
+	list_for_each_safe(pos, tmp, &arr->head)
+	{
+		elem = list_entry(pos, json_element_t, list);
+		__destroy_json_value(&elem->value);
+		free(elem);
+	}
+}
+
+static int __parse_json_array(const char *cursor, const char **end,
+							  json_array_t *arr)
+{
+	int ret;
+
+	INIT_LIST_HEAD(&arr->head);
+	ret = __parse_json_elements(cursor, end, arr);
+	if (ret < 0)
+	{
+		__destroy_json_elements(arr);
+		return ret;
+	}
+
+	arr->count = ret;
+	return 0;
+}
+
+static int __parse_json_value(const char *cursor, const char **end,
 							  json_value_t *val)
 {
 	int ret;
 
-	switch (*cursor)
+	cursor++;
+	switch (cursor[-1])
 	{
+	case '{':
+		ret = __parse_json_object(cursor, end, &val->value.object);
+		if (ret < 0)
+			return ret;
+
+		val->type = JSON_VALUE_OBJECT;
+		break;
+
+	case '[':
+		ret = __parse_json_array(cursor, end, &val->value.array);
+		if (ret < 0)
+			return ret;
+
+		val->type = JSON_VALUE_ARRAY;
+		break;
+
 	case '\"':
-		cursor++;
 		ret = __parse_json_string(cursor, end);
 		if (ret < 0)
 			return ret;
@@ -194,8 +302,8 @@ static int __parse_json_value(const char *cursor, const char **end,
 	return 0;
 }
 
-static int __parse_json_object(const char *cursor, const char **end,
-							   json_object_t *obj)
+static int __parse_json_members(const char *cursor, const char **end,
+								json_object_t *obj)
 {
 	json_member_t *memb;
 	const char *name;
@@ -208,11 +316,14 @@ static int __parse_json_object(const char *cursor, const char **end,
 		cursor++;
 
 	if (*cursor == '}')
+	{
+		*end = cursor + 1;
 		return 0;
+	}
 
 	while (1)
 	{
-		if (*cursor != '"')
+		if (*cursor != '\"')
 			return -2;
 
 		cursor++;
@@ -268,7 +379,7 @@ static int __parse_json_object(const char *cursor, const char **end,
 	return cnt;
 }
 
-void destroy_json_object(json_object_t *obj)
+static void __destroy_json_members(json_object_t *obj)
 {
 	struct list_head *pos, *tmp;
 	json_member_t *memb;
@@ -278,10 +389,43 @@ void destroy_json_object(json_object_t *obj)
 		memb = list_entry(pos, json_member_t, list);
 		list_del(pos);
 		rb_erase(&memb->rb, &obj->root);
-	//	__destroy_json_member(memb);
+		__destroy_json_value(&memb->value);
+		free(memb);
+	}
+}
+
+static void __destroy_json_value(json_value_t *val)
+{
+	switch (val->type)
+	{
+	case JSON_VALUE_OBJECT:
+		__destroy_json_members(&val->value.object);
+		break;
+	case JSON_VALUE_ARRAY:
+		__destroy_json_elements(&val->value.array);
+		break;
+	case JSON_VALUE_STRING:
+		free(val->value.string);
+		break;
+	}
+}
+
+static int __parse_json_object(const char *cursor, const char **end,
+							   json_object_t *obj)
+{
+	int ret;
+
+	INIT_LIST_HEAD(&obj->head);
+	obj->root.rb_node = NULL;
+	ret = __parse_json_members(cursor, end, obj);
+	if (ret < 0)
+	{
+		__destroy_json_members(obj);
+		return ret;
 	}
 
-	free(obj);
+	obj->count = ret;
+	return 0;
 }
 
 json_object_t *parse_json_document(const char *doc)
@@ -299,17 +443,21 @@ json_object_t *parse_json_document(const char *doc)
 	if (!obj)
 		return NULL;
 
-	INIT_LIST_HEAD(&obj->head);
-	obj->root.rb_node = NULL;
-	ret = __parse_json_object(doc + 1, &doc, obj);
+	doc++;
+	ret = __parse_json_object(doc, &doc, obj);
 	if (ret < 0)
 	{
-		destroy_json_object(obj);
+		free(obj);
 		return NULL;
 	}
 
-	obj->count = ret;
 	return obj;
+}
+
+void destroy_json_object(json_object_t *obj)
+{
+	__destroy_json_members(obj);
+	free(obj);
 }
 
 #include <stdio.h>
@@ -322,7 +470,9 @@ int main()
 	json_object_t *obj;
 	const char *aaa[] = {
 		"{ \"name\\\\\\\\\" : \"value\\t\\t\\t\", \n"
-		" \"\\t\\/name1\" : \"value2\" }"
+		" \"\\t\\/name1\" : \"value2\" }",
+		"{ \"name\"	:	[	[	[	{	\"\\t\\t\\t\" : { } 	}, \"value\"	]]] }",
+		"{ \"name\"	:			[		{ }, \"value\"	] }",
 	};
 	int n = sizeof aaa / sizeof *aaa;
 	int i;
