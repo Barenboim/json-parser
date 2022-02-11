@@ -12,9 +12,13 @@ typedef struct __json_value json_value_t;
 typedef struct __json_member json_member_t;
 typedef struct __json_element json_element_t;
 
-#define JSON_VALUE_OBJECT	1
-#define JSON_VALUE_ARRAY	2
-#define JSON_VALUE_STRING	3
+#define JSON_VALUE_STRING	1
+#define JSON_VALUE_NUMBER	2
+#define JSON_VALUE_OBJECT	3
+#define JSON_VALUE_ARRAY	4
+#define JSON_VALUE_TRUE		5
+#define JSON_VALUE_FALSE	6
+#define JSON_VALUE_NULL		7
 
 struct __json_object
 {
@@ -34,9 +38,10 @@ struct __json_value
 	int type;
 	union
 	{
+		char *string;
+		double number;
 		json_object_t object;
 		json_array_t array;
-		char *string;
 	} value;
 };
 
@@ -168,6 +173,16 @@ static int __parse_json_string(const char *cursor, const char **end)
 	return len;
 }
 
+static int __parse_json_number(const char *cursor, const char **end,
+							   double *number)
+{
+	*number = strtod(cursor, (char **)end);
+	if (*end == cursor)
+		return -2;
+
+	return 0;
+}
+
 static int __parse_json_value(const char *cursor, const char **end,
 							  json_value_t *val);
 
@@ -263,26 +278,10 @@ static int __parse_json_value(const char *cursor, const char **end,
 {
 	int ret;
 
-	cursor++;
-	switch (cursor[-1])
+	switch (*cursor)
 	{
-	case '{':
-		ret = __parse_json_object(cursor, end, &val->value.object);
-		if (ret < 0)
-			return ret;
-
-		val->type = JSON_VALUE_OBJECT;
-		break;
-
-	case '[':
-		ret = __parse_json_array(cursor, end, &val->value.array);
-		if (ret < 0)
-			return ret;
-
-		val->type = JSON_VALUE_ARRAY;
-		break;
-
 	case '\"':
+		cursor++;
 		ret = __parse_json_string(cursor, end);
 		if (ret < 0)
 			return ret;
@@ -293,6 +292,39 @@ static int __parse_json_value(const char *cursor, const char **end,
 
 		__copy_json_string(val->value.string, cursor, ret);
 		val->type = JSON_VALUE_STRING;
+		break;
+
+	case '-':
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		ret = __parse_json_number(cursor, end, &val->value.number);
+		val->type = JSON_VALUE_NUMBER;
+		break;
+
+	case '{':
+		cursor++;
+		ret = __parse_json_object(cursor, end, &val->value.object);
+		if (ret < 0)
+			return ret;
+
+		val->type = JSON_VALUE_OBJECT;
+		break;
+
+	case '[':
+		cursor++;
+		ret = __parse_json_array(cursor, end, &val->value.array);
+		if (ret < 0)
+			return ret;
+
+		val->type = JSON_VALUE_ARRAY;
 		break;
 
 	defaut:
@@ -398,14 +430,14 @@ static void __destroy_json_value(json_value_t *val)
 {
 	switch (val->type)
 	{
+	case JSON_VALUE_STRING:
+		free(val->value.string);
+		break;
 	case JSON_VALUE_OBJECT:
 		__destroy_json_members(&val->value.object);
 		break;
 	case JSON_VALUE_ARRAY:
 		__destroy_json_elements(&val->value.array);
-		break;
-	case JSON_VALUE_STRING:
-		free(val->value.string);
 		break;
 	}
 }
@@ -473,6 +505,7 @@ int main()
 		" \"\\t\\/name1\" : \"value2\" }",
 		"{ \"name\"	:	[	[	[	{	\"\\t\\t\\t\" : { } 	}, \"value\"	]]] }",
 		"{ \"name\"	:			[		{ }, \"value\"	] }",
+		"{ \"name\" :		[-1,   0.001, 0, 0.5e10 ] }"
 	};
 	int n = sizeof aaa / sizeof *aaa;
 	int i;
