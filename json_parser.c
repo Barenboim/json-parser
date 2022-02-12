@@ -6,9 +6,9 @@
 #include "list.h"
 #include "rbtree.h"
 
+typedef struct __json_value json_value_t;
 typedef struct __json_object json_object_t;
 typedef struct __json_array json_array_t;
-typedef struct __json_value json_value_t;
 typedef struct __json_member json_member_t;
 typedef struct __json_element json_element_t;
 
@@ -223,20 +223,19 @@ static int __parse_json_elements(const char *cursor, const char **end,
 		list_add_tail(&elem->list, &arr->head);
 		cnt++;
 
-		if (*cursor != ',')
-		{
-			while (isspace(*cursor))
-				cursor++;
-
-			if (*cursor != ']')
-				return -2;
-
-			break;
-		}
-
-		cursor++;
 		while (isspace(*cursor))
 			cursor++;
+
+		if (*cursor == ',')
+		{
+			cursor++;
+			while (isspace(*cursor))
+				cursor++;
+		}
+		else if (*cursor == ']')
+			break;
+		else
+			return -2;
 	}
 
 	*end = cursor + 1;
@@ -327,6 +326,30 @@ static int __parse_json_value(const char *cursor, const char **end,
 		val->type = JSON_VALUE_ARRAY;
 		break;
 
+	case 't':
+		if (strncmp(cursor, "true", 4) != 0)
+			return -2;
+
+		*end = cursor + 4;
+		val->type = JSON_VALUE_TRUE;
+		break;
+
+	case 'f':
+		if (strncmp(cursor, "false", 5) != 0)
+			return -2;
+
+		*end = cursor + 5;
+		val->type = JSON_VALUE_FALSE;
+		break;
+
+	case 'n':
+		if (strncmp(cursor, "null", 4) != 0)
+			return -2;
+
+		*end = cursor + 4;
+		val->type = JSON_VALUE_NULL;
+		break;
+
 	defaut:
 		return -2;
 	}
@@ -391,20 +414,19 @@ static int __parse_json_members(const char *cursor, const char **end,
 		__insert_json_member(memb, obj);
 		cnt++;
 
-		if (*cursor != ',')
-		{
-			while (isspace(*cursor))
-				cursor++;
-
-			if (*cursor != '}')
-				return -2;
-
-			break;
-		}
-
-		cursor++;
 		while (isspace(*cursor))
 			cursor++;
+
+		if (*cursor == ',')
+		{
+			cursor++;
+			while (isspace(*cursor))
+				cursor++;
+		}
+		else if (*cursor == '}')
+			break;
+		else
+			return -2;
 	}
 
 	*end = cursor + 1;
@@ -460,30 +482,32 @@ static int __parse_json_object(const char *cursor, const char **end,
 	return 0;
 }
 
-json_object_t *parse_json_document(const char *doc)
+json_value_t *parse_json_document(const char *doc)
 {
-	json_object_t *obj;
+	json_value_t *val;
 	int ret;
 
 	while (isspace(*doc))
 		doc++;
 
-	if (*doc != '{')
+	val = (json_value_t *)malloc(sizeof (json_value_t));
+	if (!val)
 		return NULL;
 
-	obj = (json_object_t *)malloc(sizeof (json_object_t));
-	if (!obj)
-		return NULL;
-
-	doc++;
-	ret = __parse_json_object(doc, &doc, obj);
+	ret = __parse_json_value(doc, &doc, val);
 	if (ret < 0)
 	{
-		free(obj);
+		free(val);
 		return NULL;
 	}
 
-	return obj;
+	return val;
+}
+
+void destroy_json_value(json_value_t *val)
+{
+	__destroy_json_value(val);
+	free(val);
 }
 
 void destroy_json_object(json_object_t *obj)
@@ -499,22 +523,31 @@ int main()
 	char *buf = NULL;
 	size_t size = 0;
 	const char *end;
-	json_object_t *obj;
+	json_value_t *val;
 	const char *aaa[] = {
 		"{ \"name\\\\\\\\\" : \"value\\t\\t\\t\", \n"
 		" \"\\t\\/name1\" : \"value2\" }",
 		"{ \"name\"	:	[	[	[	{	\"\\t\\t\\t\" : { } 	}, \"value\"	]]] }",
 		"{ \"name\"	:			[		{ }, \"value\"	] }",
-		"{ \"name\" :		[-1,   0.001, 0, 0.5e10 ] }"
+		"{ \"name\" :[-1    ,   0.001, 0, 0.5e10 ,  { }, { \"xxx\" : true , \"a\":false,\"b\":null}  ] }",
+		"{ \"1\"  :   0.5555   ,   \"2\"   : 111111111111111 ,   \"3\" : \"4\"  }",
+		"[ [ [ \"string\", [ [1, 0.05    , { \"haha\" : [ { }, true, false, null], \"hehe\" : \"oh\" }]]]]]"
 	};
 	int n = sizeof aaa / sizeof *aaa;
 	int i;
 	for (i = 0; i < n; i++)
 	{
 		printf("%s\n", aaa[i]);
-		obj = parse_json_document(aaa[i]);
-		if (obj)
-			destroy_json_object(obj);
+		val = parse_json_document(aaa[i]);
+		if (val)
+		{
+			printf("success\n");
+			destroy_json_value(val);
+		}
+		else
+		{
+			printf("false!\n");
+		}
 	}
 
 	return 0;
