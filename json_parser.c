@@ -5,20 +5,7 @@
 #include <assert.h>
 #include "list.h"
 #include "rbtree.h"
-
-typedef struct __json_value json_value_t;
-typedef struct __json_object json_object_t;
-typedef struct __json_array json_array_t;
-typedef struct __json_member json_member_t;
-typedef struct __json_element json_element_t;
-
-#define JSON_VALUE_STRING	1
-#define JSON_VALUE_NUMBER	2
-#define JSON_VALUE_OBJECT	3
-#define JSON_VALUE_ARRAY	4
-#define JSON_VALUE_TRUE		5
-#define JSON_VALUE_FALSE	6
-#define JSON_VALUE_NULL		7
+#include "json_parser.h"
 
 struct __json_object
 {
@@ -58,6 +45,9 @@ struct __json_element
 	struct list_head list;
 	json_value_t value;
 };
+
+typedef struct __json_member json_member_t;
+typedef struct __json_element json_element_t;
 
 static void __insert_json_member(json_member_t *memb, json_object_t *obj)
 {
@@ -482,7 +472,7 @@ static int __parse_json_object(const char *cursor, const char **end,
 	return 0;
 }
 
-json_value_t *parse_json_document(const char *doc)
+json_value_t *json_value_create(const char *doc)
 {
 	json_value_t *val;
 	int ret;
@@ -504,51 +494,111 @@ json_value_t *parse_json_document(const char *doc)
 	return val;
 }
 
-void destroy_json_value(json_value_t *val)
+void json_value_destroy(json_value_t *val)
 {
 	__destroy_json_value(val);
 	free(val);
 }
 
-void destroy_json_object(json_object_t *obj)
+const char *json_value_string(const json_value_t *val)
 {
-	__destroy_json_members(obj);
-	free(obj);
+	if (val->type != JSON_VALUE_STRING)
+		return NULL;
+
+	return val->value.string;
 }
 
-#include <stdio.h>
-
-int main()
+double json_value_number(const json_value_t *val)
 {
-	char *buf = NULL;
-	size_t size = 0;
-	const char *end;
-	json_value_t *val;
-	const char *aaa[] = {
-		"{ \"name\\\\\\\\\" : \"value\\t\\t\\t\", \n"
-		" \"\\t\\/name1\" : \"value2\" }",
-		"{ \"name\"	:	[	[	[	{	\"\\t\\t\\t\" : { } 	}, \"value\"	]]] }",
-		"{ \"name\"	:			[		{ }, \"value\"	] }",
-		"{ \"name\" :[-1    ,   0.001, 0, 0.5e10 ,  { }, { \"xxx\" : true , \"a\":false,\"b\":null}  ] }",
-		"{ \"1\"  :   0.5555   ,   \"2\"   : 111111111111111 ,   \"3\" : \"4\"  }",
-		"[ [ [ \"string\", [ [1, 0.05    , { \"haha\" : [ { }, true, false, null], \"hehe\" : \"oh\" }]]]]]"
-	};
-	int n = sizeof aaa / sizeof *aaa;
-	int i;
-	for (i = 0; i < n; i++)
+	if (val->type != JSON_VALUE_NUMBER)
+		return 0;
+
+	return val->value.number;
+}
+
+const json_object_t *json_value_object(const json_value_t *val)
+{
+	if (val->type != JSON_VALUE_OBJECT)
+		return NULL;
+
+	return &val->value.object;
+}
+
+const json_array_t *json_value_array(const json_value_t *val)
+{
+	if (val->type != JSON_VALUE_ARRAY)
+		return NULL;
+
+	return &val->value.array;
+}
+
+const json_value_t *json_object_find(const char *name, const json_object_t *obj)
+{
+	struct rb_node *p = obj->root.rb_node;
+	json_member_t *memb;
+	int n;
+
+	while (p)
 	{
-		printf("%s\n", aaa[i]);
-		val = parse_json_document(aaa[i]);
-		if (val)
-		{
-			printf("success\n");
-			destroy_json_value(val);
-		}
+		memb = rb_entry(p, json_member_t, rb);
+		n = strcmp(name, memb->name);
+		if (n < 0)
+			p = p->rb_left;
+		else if (n > 0)
+			p = p->rb_right;
 		else
-		{
-			printf("false!\n");
-		}
+			return &memb->value;
 	}
 
-	return 0;
+	return NULL;
 }
+
+int json_object_count(const json_object_t *obj)
+{
+	return obj->count;
+}
+
+int json_object_read(const char *name[], const json_value_t *val[], int n,
+					 const json_object_t *obj)
+{
+	struct list_head *pos;
+	json_member_t *memb;
+	int i = 0;
+
+	list_for_each(pos, &obj->head)
+	{
+		if (i == n)
+			break;
+
+		memb = list_entry(pos, json_member_t, list);
+		name[i] = memb->name;
+		val[i] = &memb->value;
+	}
+
+	return i;
+}
+
+int json_array_count(const json_array_t *arr)
+{
+	return arr->count;
+}
+
+int json_array_read(const json_value_t *val[], int n,
+					const json_array_t *arr)
+{
+	struct list_head *pos;
+	json_element_t *elem;
+	int i = 0;
+
+	list_for_each(pos, &arr->head)
+	{
+		if (i == n)
+			break;
+
+		elem = list_entry(pos, json_element_t, list);
+		val[i] = &elem->value;
+	}
+
+	return i;
+}
+
