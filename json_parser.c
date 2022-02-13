@@ -531,7 +531,8 @@ const json_array_t *json_value_array(const json_value_t *val)
 	return &val->value.array;
 }
 
-const json_value_t *json_object_find(const char *name, const json_object_t *obj)
+const json_value_t *json_object_find(const char *name,
+									 const json_object_t *obj)
 {
 	struct rb_node *p = obj->root.rb_node;
 	json_member_t *memb;
@@ -560,18 +561,19 @@ int json_object_count(const json_object_t *obj)
 int json_object_read(const char *name[], const json_value_t *val[], int n,
 					 const json_object_t *obj)
 {
-	struct list_head *pos;
+	struct list_head *pos = obj->head.next;
 	json_member_t *memb;
-	int i = 0;
+	int i;
 
-	list_for_each(pos, &obj->head)
+	for (i = 0; i < n; i++)
 	{
-		if (i == n)
+		if (pos == &obj->head)
 			break;
 
 		memb = list_entry(pos, json_member_t, list);
 		name[i] = memb->name;
 		val[i] = &memb->value;
+		pos = pos->next;
 	}
 
 	return i;
@@ -585,17 +587,18 @@ int json_array_count(const json_array_t *arr)
 int json_array_read(const json_value_t *val[], int n,
 					const json_array_t *arr)
 {
-	struct list_head *pos;
+	struct list_head *pos = arr->head.next;
 	json_element_t *elem;
-	int i = 0;
+	int i;
 
-	list_for_each(pos, &arr->head)
+	for (i = 0; i < n; i++)
 	{
-		if (i == n)
+		if (pos == &arr->head)
 			break;
 
 		elem = list_entry(pos, json_element_t, list);
 		val[i] = &elem->value;
+		pos = pos->next;
 	}
 
 	return i;
