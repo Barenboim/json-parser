@@ -125,7 +125,6 @@ static void __copy_json_string(char *dest, const char *src, int len)
 static int __parse_json_string(const char *cursor, const char **end)
 {
 	int len = 0;
-	int ret;
 
 	while (1)
 	{
@@ -340,7 +339,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 		val->type = JSON_VALUE_NULL;
 		break;
 
-	defaut:
+	default:
 		return -2;
 	}
 
