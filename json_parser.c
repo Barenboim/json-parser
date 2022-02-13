@@ -508,12 +508,12 @@ const char *json_value_string(const json_value_t *val)
 	return val->value.string;
 }
 
-double json_value_number(const json_value_t *val)
+const double *json_value_number(const json_value_t *val)
 {
 	if (val->type != JSON_VALUE_NUMBER)
-		return 0;
+		return NULL;
 
-	return val->value.number;
+	return &val->value.number;
 }
 
 const json_object_t *json_value_object(const json_value_t *val)
