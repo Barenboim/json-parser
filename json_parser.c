@@ -8,6 +8,8 @@
 #include "rbtree.h"
 #include "json_parser.h"
 
+#define JSON_DEPTH_LIMIT	1024
+
 struct __json_object
 {
 	struct list_head head;
@@ -174,15 +176,15 @@ static int __parse_json_number(const char *cursor, const char **end,
 }
 
 static int __parse_json_value(const char *cursor, const char **end,
-							  json_value_t *val);
+							  int depth, json_value_t *val);
 
 static void __destroy_json_value(json_value_t *val);
 
 static int __parse_json_object(const char *cursor, const char **end,
-							   json_object_t *obj);
+							   int depth, json_object_t *obj);
 
 static int __parse_json_elements(const char *cursor, const char **end,
-								 json_array_t *arr)
+								 int depth, json_array_t *arr)
 {
 	json_element_t *elem;
 	int cnt = 0;
@@ -203,7 +205,7 @@ static int __parse_json_elements(const char *cursor, const char **end,
 		if (!elem)
 			return -1;
 
-		ret = __parse_json_value(cursor, &cursor, &elem->value);
+		ret = __parse_json_value(cursor, &cursor, depth, &elem->value);
 		if (ret < 0)
 		{
 			free(elem);
@@ -246,12 +248,15 @@ static void __destroy_json_elements(json_array_t *arr)
 }
 
 static int __parse_json_array(const char *cursor, const char **end,
-							  json_array_t *arr)
+							  int depth, json_array_t *arr)
 {
 	int ret;
 
+	if (depth >= JSON_DEPTH_LIMIT)
+		return -3;
+
 	INIT_LIST_HEAD(&arr->head);
-	ret = __parse_json_elements(cursor, end, arr);
+	ret = __parse_json_elements(cursor, end, depth, arr);
 	if (ret < 0)
 	{
 		__destroy_json_elements(arr);
@@ -263,7 +268,7 @@ static int __parse_json_array(const char *cursor, const char **end,
 }
 
 static int __parse_json_value(const char *cursor, const char **end,
-							  json_value_t *val)
+							  int depth, json_value_t *val)
 {
 	int ret;
 
@@ -300,7 +305,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 
 	case '{':
 		cursor++;
-		ret = __parse_json_object(cursor, end, &val->value.object);
+		ret = __parse_json_object(cursor, end, depth + 1, &val->value.object);
 		if (ret < 0)
 			return ret;
 
@@ -309,7 +314,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 
 	case '[':
 		cursor++;
-		ret = __parse_json_array(cursor, end, &val->value.array);
+		ret = __parse_json_array(cursor, end, depth + 1, &val->value.array);
 		if (ret < 0)
 			return ret;
 
@@ -348,7 +353,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 }
 
 static int __parse_json_members(const char *cursor, const char **end,
-								json_object_t *obj)
+								int depth, json_object_t *obj)
 {
 	json_member_t *memb;
 	const char *name;
@@ -393,7 +398,7 @@ static int __parse_json_members(const char *cursor, const char **end,
 		while (isspace(*cursor))
 			cursor++;
 
-		ret = __parse_json_value(cursor, &cursor, &memb->value);
+		ret = __parse_json_value(cursor, &cursor, depth, &memb->value);
 		if (ret < 0)
 		{
 			free(memb);
@@ -455,13 +460,16 @@ static void __destroy_json_value(json_value_t *val)
 }
 
 static int __parse_json_object(const char *cursor, const char **end,
-							   json_object_t *obj)
+							   int depth, json_object_t *obj)
 {
 	int ret;
 
+	if (depth >= JSON_DEPTH_LIMIT)
+		return -3;
+
 	INIT_LIST_HEAD(&obj->head);
 	obj->root.rb_node = NULL;
-	ret = __parse_json_members(cursor, end, obj);
+	ret = __parse_json_members(cursor, end, depth, obj);
 	if (ret < 0)
 	{
 		__destroy_json_members(obj);
@@ -484,7 +492,7 @@ json_value_t *json_value_create(const char *doc)
 	if (!val)
 		return NULL;
 
-	ret = __parse_json_value(doc, &doc, val);
+	ret = __parse_json_value(doc, &doc, 0, val);
 	if (ret < 0)
 	{
 		free(val);
