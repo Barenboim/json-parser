@@ -493,6 +493,18 @@ json_value_t *json_value_create(const char *doc)
 		return NULL;
 
 	ret = __parse_json_value(doc, &doc, 0, val);
+	if (ret >= 0)
+	{
+		while (isspace(*doc))
+			doc++;
+
+		if (*doc)
+		{
+			__destroy_json_value(val);
+			ret = -2;
+		}
+	}
+
 	if (ret < 0)
 	{
 		free(val);
