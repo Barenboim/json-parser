@@ -168,6 +168,14 @@ static int __parse_json_string(const char *cursor, const char **end)
 static int __parse_json_number(const char *cursor, const char **end,
 							   double *number)
 {
+	const char *p = cursor;
+
+	if (*p == '-')
+		p++;
+
+	if (*p == '0' && (tolower(p[1]) == 'x' || isdigit(p[1])))
+		return -2;
+
 	*number = strtod(cursor, (char **)end);
 	if (*end == cursor)
 		return -2;
