@@ -23,7 +23,7 @@ void json_value_destroy(json_value_t *val);
 
 int json_value_type(const json_value_t *val);
 const char *json_value_string(const json_value_t *val);
-const double *json_value_number(const json_value_t *val);
+const double json_value_number(const json_value_t *val);
 const json_object_t *json_value_object(const json_value_t *val);
 const json_array_t *json_value_array(const json_value_t *val);
 
