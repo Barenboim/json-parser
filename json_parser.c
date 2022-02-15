@@ -522,6 +522,11 @@ void json_value_destroy(json_value_t *val)
 	free(val);
 }
 
+int json_value_type(const json_value_t *val)
+{
+	return val->type;
+}
+
 const char *json_value_string(const json_value_t *val)
 {
 	if (val->type != JSON_VALUE_STRING)
@@ -581,8 +586,8 @@ int json_object_size(const json_object_t *obj)
 	return obj->size;
 }
 
-const char *json_objet_next_name(const char *prev,
-								 const json_object_t *obj)
+const char *json_object_next_name(const char *prev,
+								  const json_object_t *obj)
 {
 	struct list_head *pos;
 	json_member_t *memb;
@@ -602,8 +607,8 @@ const char *json_objet_next_name(const char *prev,
 	return memb->name;
 }
 
-const json_value_t *json_objet_next_value(const json_value_t *prev,
-										  const json_object_t *obj)
+const json_value_t *json_object_next_value(const json_value_t *prev,
+										   const json_object_t *obj)
 {
 	struct list_head *pos;
 	json_member_t *memb;
