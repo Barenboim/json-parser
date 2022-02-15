@@ -1,6 +1,8 @@
 #ifndef _JSON_PARSER_H_
 #define _JSON_PARSER_H_
 
+#include <stddef.h>
+
 #define JSON_VALUE_STRING	1
 #define JSON_VALUE_NUMBER	2
 #define JSON_VALUE_OBJECT	3
@@ -42,6 +44,14 @@ const json_value_t *json_array_next_value(const json_value_t *val,
 #ifdef __cplusplus
 }
 #endif
+
+#define json_object_for_each(name, val, obj) \
+	for (name = NULL, val = NULL; \
+		 name = json_object_next_name(name, obj), \
+		 val = json_object_next_value(val, obj), val; )
+
+#define json_array_for_each(val, arr) \
+	for (val = NULL; val = json_array_next_value(val, arr), val; )
 
 #endif
 
