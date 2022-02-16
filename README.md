@@ -7,3 +7,5 @@ $ make
 $ ./parse_json \< xxx.json
 ### Test parsing speed:
 $ ./test_speed \<repeat times\> \< xxx.json
+# BUG
+Do not support unicode (\\u hex hex hex hex).
