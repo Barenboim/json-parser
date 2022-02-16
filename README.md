@@ -4,6 +4,6 @@ This json parser is created for the project of [C++ Workflow](https://github.com
 $ make
 # Run tests
 ### Parse and print json document:
-$ ./parse_json < xxx.json
+$ ./parse_json \< xxx.json
 ### Test parsing speed:
-$ ./test_speed <repeat times> < xxx.json
+$ ./test_speed \<repeat times\> \< xxx.json
