@@ -91,6 +91,16 @@ void print_json_string(const char *str)
 	printf("\"");
 }
 
+void print_json_number(double number)
+{
+	long long integer = number;
+
+	if (integer == number)
+		printf("%lld", integer);
+	else
+		printf("%lf", number);
+}
+
 void print_json_value(const json_value_t *val, int depth)
 {
 	switch (json_value_type(val))
@@ -99,7 +109,7 @@ void print_json_value(const json_value_t *val, int depth)
 		print_json_string(json_value_string(val));
 		break;
 	case JSON_VALUE_NUMBER:
-		printf("%lf", json_value_number(val));
+		print_json_number(json_value_number(val));
 		break;
 	case JSON_VALUE_OBJECT:
 		print_json_object(json_value_object(val), depth);
