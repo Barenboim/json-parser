@@ -23,6 +23,7 @@ extern "C"
 json_value_t *json_value_create(const char *doc);
 void json_value_destroy(json_value_t *val);
 
+int json_value_depth(const json_value_t *val);
 int json_value_type(const json_value_t *val);
 const char *json_value_string(const json_value_t *val);
 double json_value_number(const json_value_t *val);

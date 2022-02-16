@@ -25,6 +25,7 @@ struct __json_array
 
 struct __json_value
 {
+	int depth;
 	int type;
 	union
 	{
@@ -355,6 +356,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 		return -2;
 	}
 
+	val->depth = depth;
 	return 0;
 }
 
@@ -520,6 +522,11 @@ void json_value_destroy(json_value_t *val)
 {
 	__destroy_json_value(val);
 	free(val);
+}
+
+int json_value_depth(const json_value_t *val)
+{
+	return val->depth;
 }
 
 int json_value_type(const json_value_t *val)
