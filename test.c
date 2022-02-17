@@ -4,7 +4,7 @@
 
 #define BUFSIZE		(8 * 1024 * 1024)
 
-void print_json_value(const json_value_t *val);
+void print_json_value(const json_value_t *val, int depth);
 
 void print_json_object(const json_object_t *obj, int depth)
 {
@@ -22,7 +22,7 @@ void print_json_object(const json_object_t *obj, int depth)
 		for (i = 0; i < depth + 1; i++)
 			printf("    ");
 		printf("\"%s\": ", name);
-		print_json_value(val);
+		print_json_value(val, depth + 1);
 	}
 
 	printf("\n");
@@ -45,7 +45,7 @@ void print_json_array(const json_array_t *arr, int depth)
 		n++;
 		for (i = 0; i < depth + 1; i++)
 			printf("    ");
-		print_json_value(val);
+		print_json_value(val, depth + 1);
 	}
 
 	printf("\n");
@@ -101,10 +101,8 @@ void print_json_number(double number)
 		printf("%lf", number);
 }
 
-void print_json_value(const json_value_t *val)
+void print_json_value(const json_value_t *val, int depth)
 {
-	int depth = json_value_depth(val);
-
 	switch (json_value_type(val))
 	{
 	case JSON_VALUE_STRING:
@@ -147,7 +145,7 @@ int main()
 	json_value_t *val = json_value_create(buf);
 	if (val)
 	{
-		print_json_value(val);
+		print_json_value(val, 0);
 		json_value_destroy(val);
 	}
 	else
