@@ -7,11 +7,11 @@ $ make
 # Run tests
 ### Parse and print json document:
 ~~~bash
-$ ./parse_json \< xxx.json
+$ ./parse_json < xxx.json
 ~~~
 ### Test parsing speed:
 ~~~bash
-$ time ./test_speed \<repeat times\> \< xxx.json
+$ time ./test_speed <repeat times> < xxx.json
 ~~~
 # BUG
 Do not support unicode (\\u hex hex hex hex).
