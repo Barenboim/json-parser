@@ -306,6 +306,9 @@ static int __parse_json_value(const char *cursor, const char **end,
 	case '8':
 	case '9':
 		ret = __parse_json_number(cursor, end, &val->value.number);
+		if (ret < 0)
+			return -2;
+
 		val->type = JSON_VALUE_NUMBER;
 		break;
 
