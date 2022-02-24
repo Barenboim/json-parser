@@ -75,55 +75,7 @@ static void __insert_json_member(json_member_t *memb, json_object_t *obj)
 	list_add_tail(&memb->list, &obj->head);
 }
 
-static void __copy_json_string(char *dest, const char *src)
-{
-	while (*src != '\"')
-	{
-		if (*src == '\\')
-		{
-			src++;
-			switch (*src)
-			{
-			case '\"':
-				*dest = '\"';
-				break;
-			case '\\':
-				*dest = '\\';
-				break;
-			case '/':
-				*dest = '/';
-				break;
-			case 'b':
-				*dest = '\b';
-				break;
-			case 'f':
-				*dest = '\f';
-				break;
-			case 'n':
-				*dest = '\n';
-				break;
-			case 'r':
-				*dest = '\r';
-				break;
-			case 't':
-				*dest = '\t';
-				break;
-			default:
-				assert(0);
-				break;
-			}
-		}
-		else
-			*dest = *src;
-
-		src++;
-		dest++;
-	}
-
-	*dest = '\0';
-}
-
-static int __parse_json_string(const char *cursor, const char **end)
+static int __json_string_length(const char *cursor)
 {
 	int len = 0;
 
@@ -137,30 +89,63 @@ static int __parse_json_string(const char *cursor, const char **end)
 
 		cursor++;
 		if (cursor[-1] == '\\')
-		{
-			switch (*cursor)
-			{
-			case '\"':
-			case '\\':
-			case '/':
-			case 'b':
-			case 'f':
-			case 'n':
-			case 'r':
-			case 't':
-				cursor++;
-				break;
-			case 'u':	/* TODO: support unicode */
-			default:
-				return -2;
-			}
-		}
+			cursor++;
 
 		len++;
 	}
 
-	*end = cursor + 1;
 	return len;
+}
+
+static int __parse_json_string(const char *cursor, const char **end,
+							   char *str)
+{
+	while (*cursor != '\"')
+	{
+		if (*cursor == '\\')
+		{
+			cursor++;
+			switch (*cursor)
+			{
+			case '\"':
+				*str = '\"';
+				break;
+			case '\\':
+				*str = '\\';
+				break;
+			case '/':
+				*str = '/';
+				break;
+			case 'b':
+				*str = '\b';
+				break;
+			case 'f':
+				*str = '\f';
+				break;
+			case 'n':
+				*str = '\n';
+				break;
+			case 'r':
+				*str = '\r';
+				break;
+			case 't':
+				*str = '\t';
+				break;
+			case 'u':	/* TODO: support unicode. */
+			default:
+				return -2;
+			}
+		}
+		else
+			*str = *cursor;
+
+		cursor++;
+		str++;
+	}
+
+	*str = '\0';
+	*end = cursor + 1;
+	return 0;
 }
 
 static int __parse_json_number(const char *cursor, const char **end,
@@ -282,7 +267,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 	{
 	case '\"':
 		cursor++;
-		ret = __parse_json_string(cursor, end);
+		ret = __json_string_length(cursor);
 		if (ret < 0)
 			return ret;
 
@@ -290,7 +275,10 @@ static int __parse_json_value(const char *cursor, const char **end,
 		if (!val->value.string)
 			return -1;
 
-		__copy_json_string(val->value.string, cursor);
+		ret = __parse_json_string(cursor, end, val->value.string);
+		if (ret < 0)
+			return -2;
+
 		val->type = JSON_VALUE_STRING;
 		break;
 
@@ -361,11 +349,37 @@ static int __parse_json_value(const char *cursor, const char **end,
 	return 0;
 }
 
+static int __parse_json_member(const char *cursor, const char **end,
+							   int depth, json_member_t *memb)
+{
+	int ret;
+
+	ret = __parse_json_string(cursor, &cursor, memb->name);
+	if (ret < 0)
+		return ret;
+
+	while (isspace(*cursor))
+		cursor++;
+
+	if (*cursor != ':')
+		return -2;
+
+	cursor++;
+	while (isspace(*cursor))
+		cursor++;
+
+	ret = __parse_json_value(cursor, &cursor, depth, &memb->value);
+	if (ret < 0)
+		return ret;
+
+	*end = cursor;
+	return 0;
+}
+
 static int __parse_json_members(const char *cursor, const char **end,
 								int depth, json_object_t *obj)
 {
 	json_member_t *memb;
-	const char *name;
 	int cnt = 0;
 	int ret;
 
@@ -384,33 +398,18 @@ static int __parse_json_members(const char *cursor, const char **end,
 			return -2;
 
 		cursor++;
-		name = cursor;
-		ret = __parse_json_string(cursor, &cursor);
-		if (ret < 0)
-			return ret;
-
-		while (isspace(*cursor))
-			cursor++;
-
-		if (*cursor != ':')
-			return -2;
-
+		ret = __json_string_length(cursor);
 		memb = (json_member_t *)malloc(offsetof(json_member_t, name) + ret + 1);
 		if (!memb)
 			return -1;
 
-		cursor++;
-		while (isspace(*cursor))
-			cursor++;
-
-		ret = __parse_json_value(cursor, &cursor, depth, &memb->value);
+		ret = __parse_json_member(cursor, &cursor, depth, memb);
 		if (ret < 0)
 		{
 			free(memb);
 			return ret;
 		}
 
-		__copy_json_string(memb->name, name);
 		__insert_json_member(memb, obj);
 		cnt++;
 
