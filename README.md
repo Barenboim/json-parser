@@ -13,5 +13,3 @@ $ ./parse_json < xxx.json
 ~~~bash
 $ time ./test_speed <repeat times> < xxx.json
 ~~~
-# BUG
-Do not support unicode (\\u hex hex hex hex).
