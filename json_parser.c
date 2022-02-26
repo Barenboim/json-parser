@@ -96,18 +96,39 @@ static int __json_string_length(const char *cursor)
 	return len;
 }
 
+static int __parse_json_hex4(const char *cursor, const char **end,
+							 unsigned int *code)
+{
+	int hex;
+	int i;
+
+	*code = 0;
+	for (i = 0; i < 4; i++)
+	{
+		hex = tolower(*cursor);
+		if (hex >= '0' && hex <= '9')
+			hex = hex - '0';
+		else
+			hex = hex - 'a' + 10;
+
+		*code = (*code << 4) + hex;
+		cursor++;
+    }
+
+	*end = cursor;
+	return 0;
+}
+
 static int __parse_json_unicode(const char *cursor, const char **end,
 								char *utf8)
 {
 	unsigned int code;
 	unsigned int next;
+	int ret;
 
-	if (!isxdigit(*cursor))
-		return -2;
-
-	code = strtol(cursor, (char **)end, 16);
-	if (*end != cursor + 4)
-		return -2;
+	ret = __parse_json_hex4(cursor, end, &code);
+	if (ret < 0)
+		return ret;
 
 	if (code >= 0xd800 && code <= 0xdbff)
 	{
@@ -120,12 +141,9 @@ static int __parse_json_unicode(const char *cursor, const char **end,
 			return -2;
 
 		cursor++;
-		if (!isxdigit(*cursor))
-			return -2;
-
-		next = strtol(cursor, (char **)end, 16);
-		if (*end != cursor + 4)
-			return -2;
+		ret = __parse_json_hex4(cursor, end, &next);
+		if (ret < 0)
+			return ret;
 
     	if (next < 0xdc00 || next > 0xdfff)
 			return -2;
