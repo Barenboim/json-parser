@@ -3,7 +3,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include <assert.h>
 #include "list.h"
 #include "rbtree.h"
 #include "json_parser.h"
