@@ -493,6 +493,9 @@ static int __parse_json_members(const char *cursor, const char **end,
 
 		cursor++;
 		ret = __json_string_length(cursor);
+		if (ret < 0)
+			break;
+
 		memb = (json_member_t *)malloc(offsetof(json_member_t, name) + ret + 1);
 		if (!memb)
 			return -1;
