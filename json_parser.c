@@ -97,9 +97,76 @@ static int __json_string_length(const char *cursor)
 	return len;
 }
 
+static int __parse_json_unicode(const char *cursor, const char **end,
+								char *utf8)
+{
+	unsigned int code;
+	unsigned int next;
+
+	if (!isxdigit(*cursor))
+		return -2;
+
+	code = strtol(cursor, (char **)end, 16);
+	if (*end != cursor + 4)
+		return -2;
+
+	if (code >= 0xd800 && code <= 0xdbff)
+	{
+		cursor = *end;
+		if (*cursor != '\\')
+			return -2;
+
+		cursor++;
+		if (*cursor != 'u')
+			return -2;
+
+		cursor++;
+		if (!isxdigit(*cursor))
+			return -2;
+
+		next = strtol(cursor, (char **)end, 16);
+		if (*end != cursor + 4)
+			return -2;
+
+    	if (next < 0xdc00 || next > 0xdfff)
+			return -2;
+
+		code = (((code & 0x3ff) << 10) | (next & 0x3ff)) + 0x10000;
+	}
+
+	if (code <= 0x7f)
+	{
+		utf8[0] = code;
+		return 1;
+	}
+	else if (code <= 0x7ff)
+	{
+		utf8[0] = 0xc0 | (code >> 6);
+		utf8[1] = 0x80 | (code & 0x3f);
+		return 2;
+	}
+    else if (code <= 0xffff)
+	{
+        utf8[0] = 0xe0 | (code >> 12);
+		utf8[1] = 0x80 | ((code >> 6) & 0x3f);
+		utf8[2] = 0x80 | (code & 0x3f);
+		return 3;
+	}
+	else
+	{
+		utf8[0] = 0xf0 | (code >> 18);
+		utf8[1] = 0x80 | ((code >> 12) & 0x3f);
+		utf8[2] = 0x80 | ((code >> 6) & 0x3f);
+		utf8[3] = 0x80 | (code & 0x3f);
+		return 4;
+	}
+}
+
 static int __parse_json_string(const char *cursor, const char **end,
 							   char *str)
 {
+	int ret;
+
 	while (*cursor != '\"')
 	{
 		if (*cursor == '\\')
@@ -131,7 +198,15 @@ static int __parse_json_string(const char *cursor, const char **end,
 			case 't':
 				*str = '\t';
 				break;
-			case 'u':	/* TODO: support unicode. */
+			case 'u':
+				cursor++;
+				ret = __parse_json_unicode(cursor, &cursor, str);
+				if (ret < 0)
+					return ret;
+
+				str += ret;
+				continue;
+
 			default:
 				return -2;
 			}
