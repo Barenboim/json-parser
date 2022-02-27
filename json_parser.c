@@ -56,14 +56,12 @@ static void __insert_json_member(json_member_t *memb, json_object_t *obj)
 	struct rb_node **p = &obj->root.rb_node;
 	struct rb_node *parent = NULL;
 	json_member_t *entry;
-	int n;
 
 	while (*p)
 	{
 		parent = *p;
 		entry = rb_entry(*p, json_member_t, rb);
-		n = strcmp(memb->name, entry->name);
-		if (n < 0)
+		if (strcmp(memb->name, entry->name) < 0)
 			p = &(*p)->rb_left;
 		else
 			p = &(*p)->rb_right;
@@ -83,12 +81,17 @@ static int __json_string_length(const char *cursor)
 		if (*cursor == '\"')
 			break;
 
-		if (!*cursor)
+		if (*(const unsigned char *)cursor < ' ')
 			return -2;
 
 		cursor++;
 		if (cursor[-1] == '\\')
+		{
+			if (!*cursor)
+				return -2;
+
 			cursor++;
+		}
 
 		len++;
 	}
