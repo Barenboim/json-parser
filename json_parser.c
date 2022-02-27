@@ -105,9 +105,11 @@ static int __parse_json_hex4(const char *cursor, const char **end,
 	*code = 0;
 	for (i = 0; i < 4; i++)
 	{
-		hex = tolower(*cursor);
+		hex = *cursor;
 		if (hex >= '0' && hex <= '9')
 			hex = hex - '0';
+		else if (hex >= 'A' && hex <= 'F')
+			hex = hex - 'A' + 10;
 		else if (hex >= 'a' && hex <= 'f')
 			hex = hex - 'a' + 10;
 		else
@@ -131,6 +133,9 @@ static int __parse_json_unicode(const char *cursor, const char **end,
 	ret = __parse_json_hex4(cursor, end, &code);
 	if (ret < 0)
 		return ret;
+
+	if (code >= 0xdc00 && code <= 0xdfff)
+		return -2;
 
 	if (code >= 0xd800 && code <= 0xdbff)
 	{
