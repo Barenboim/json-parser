@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "json_parser.h"
 
-#define BUFSIZE		(8 * 1024 * 1024)
+#define BUFSIZE		(64 * 1024 * 1024)
 
 void print_json_value(const json_value_t *val, int depth);
 
@@ -132,10 +132,18 @@ void print_json_value(const json_value_t *val, int depth)
 int main()
 {
 	static char buf[BUFSIZE];
-	size_t n = fread(buf, 1, BUFSIZE - 1, stdin);
+	size_t n = fread(buf, 1, BUFSIZE, stdin);
 
 	if (n > 0)
+	{
+		if (n == BUFSIZE)
+		{
+			fprintf(stderr, "File too large.\n");
+			exit(1);
+		}
+
 		buf[n] = '\0';
+	}
 	else
 	{
 		perror("fread");

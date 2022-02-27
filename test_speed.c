@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include "json_parser.h"
 
-#define BUFSIZE		(8 * 1024 * 1024)
+#define BUFSIZE		(64 * 1024 * 1024)
 
 int main(int argc, char *argv[])
 {
 	static char buf[BUFSIZE];
+	size_t n;
 
 	if (argc != 2)
 	{
@@ -14,10 +15,17 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	size_t n = fread(buf, 1, BUFSIZE - 1, stdin);
-
+	n = fread(buf, 1, BUFSIZE, stdin);
 	if (n > 0)
+	{
+		if (n == BUFSIZE)
+		{
+			fprintf(stderr, "File too large.\n");
+			exit(1);
+		}
+
 		buf[n] = '\0';
+	}
 	else
 	{
 		perror("fread");
