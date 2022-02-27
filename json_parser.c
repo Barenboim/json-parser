@@ -108,7 +108,7 @@ static int __parse_json_hex4(const char *cursor, const char **end,
 		hex = tolower(*cursor);
 		if (hex >= '0' && hex <= '9')
 			hex = hex - '0';
-		else if (hex >= 'a' && hex <= 'z')
+		else if (hex >= 'a' && hex <= 'f')
 			hex = hex - 'a' + 10;
 		else
 			return -2;
