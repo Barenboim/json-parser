@@ -258,7 +258,7 @@ static int __parse_json_number(const char *cursor, const char **end,
 	if (*p == '-')
 		p++;
 
-	if (*p == '0' && isalnum(p[1]))
+	if (*p == '0' && (isdigit(p[1]) || p[1] == 'X' || p[1] == 'x'))
 		return -2;
 
 	*number = strtod(cursor, (char **)end);
