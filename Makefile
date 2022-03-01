@@ -1,4 +1,9 @@
-CFLAGS = -g -Wall -O2
+CFLAGS = -g -Wall
+ifeq ($(DEBUG), y)
+	CFLAGS += -O0
+else
+	CFLAGS += -O2
+endif
 CC = gcc
 LD = gcc
 
