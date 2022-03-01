@@ -302,7 +302,7 @@ static int __parse_json_elements(const char *cursor, const char **end,
 		if (ret < 0)
 		{
 			free(elem);
-			return -2;
+			return ret;
 		}
 
 		list_add_tail(&elem->list, &arr->head);
@@ -379,7 +379,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 
 		ret = __parse_json_string(cursor, end, val->value.string);
 		if (ret < 0)
-			return -2;
+			return ret;
 
 		val->type = JSON_VALUE_STRING;
 		break;
@@ -397,7 +397,7 @@ static int __parse_json_value(const char *cursor, const char **end,
 	case '9':
 		ret = __parse_json_number(cursor, end, &val->value.number);
 		if (ret < 0)
-			return -2;
+			return ret;
 
 		val->type = JSON_VALUE_NUMBER;
 		break;
@@ -594,12 +594,12 @@ json_value_t *json_value_create(const char *doc)
 	json_value_t *val;
 	int ret;
 
-	while (isspace(*doc))
-		doc++;
-
 	val = (json_value_t *)malloc(sizeof (json_value_t));
 	if (!val)
 		return NULL;
+
+	while (isspace(*doc))
+		doc++;
 
 	ret = __parse_json_value(doc, &doc, 0, val);
 	if (ret >= 0)
