@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
@@ -97,6 +98,29 @@ static int __json_string_length(const char *cursor)
 	}
 
 	return len;
+}
+
+static void __move_json_value(json_value_t *src, json_value_t *dest)
+{
+	switch (src->type)
+	{
+	case JSON_VALUE_STRING:
+		dest->value.string = src->value.string;
+		break;
+	case JSON_VALUE_NUMBER:
+		dest->value.number = src->value.number;
+		break;
+	case JSON_VALUE_OBJECT:
+		dest->value.object.root.rb_node = src->value.object.root.rb_node;
+		list_splice(&dest->value.object.head, &src->value.object.head);
+		break;
+	case JSON_VALUE_ARRAY:
+		list_splice(&dest->value.array.head, &src->value.array.head);
+		break;
+	}
+
+	dest->type = src->type;
+	free(src);
 }
 
 static int __parse_json_hex4(const char *cursor, const char **end,
@@ -251,7 +275,7 @@ static int __parse_json_string(const char *cursor, const char **end,
 }
 
 static int __parse_json_number(const char *cursor, const char **end,
-							   double *number)
+							   double *num)
 {
 	const char *p = cursor;
 
@@ -261,7 +285,7 @@ static int __parse_json_number(const char *cursor, const char **end,
 	if (*p == '0' && (isdigit(p[1]) || p[1] == 'X' || p[1] == 'x'))
 		return -2;
 
-	*number = strtod(cursor, (char **)end);
+	*num = strtod(cursor, (char **)end);
 	if (*end == cursor)
 		return -2;
 
@@ -589,7 +613,7 @@ static int __parse_json_object(const char *cursor, const char **end,
 	return 0;
 }
 
-json_value_t *json_value_create(const char *doc)
+json_value_t *json_value_parse(const char *doc)
 {
 	json_value_t *val;
 	int ret;
@@ -623,6 +647,44 @@ json_value_t *json_value_create(const char *doc)
 	return val;
 }
 
+json_value_t *json_value_create(int type, ...)
+{
+	json_value_t *val;
+	va_list ap;
+
+	val = (json_value_t *)malloc(sizeof (json_value_t));
+	if (!val)
+		return NULL;
+
+	va_start(ap, type);
+	switch (type)
+	{
+	case JSON_VALUE_STRING:
+		val->value.string = strdup(va_arg(ap, const char *));
+		break;
+	case JSON_VALUE_NUMBER:
+		val->value.number = va_arg(ap, double);
+		break;
+	case JSON_VALUE_OBJECT:
+		INIT_LIST_HEAD(&val->value.object.head);
+		val->value.object.root.rb_node = NULL;
+		break;
+	case JSON_VALUE_ARRAY:
+		INIT_LIST_HEAD(&val->value.array.head);
+		break;
+	}
+
+	va_end(ap);
+	if (type == JSON_VALUE_STRING && !val->value.string)
+	{
+		free(val);
+		return NULL;
+	}
+
+	val->type = type;
+	return val;
+}
+
 void json_value_destroy(json_value_t *val)
 {
 	__destroy_json_value(val);
@@ -650,20 +712,20 @@ double json_value_number(const json_value_t *val)
 	return val->value.number;
 }
 
-const json_object_t *json_value_object(const json_value_t *val)
+json_object_t *json_value_object(const json_value_t *val)
 {
 	if (val->type != JSON_VALUE_OBJECT)
 		return NULL;
 
-	return &val->value.object;
+	return &((json_value_t *)val)->value.object;
 }
 
-const json_array_t *json_value_array(const json_value_t *val)
+json_array_t *json_value_array(const json_value_t *val)
 {
 	if (val->type != JSON_VALUE_ARRAY)
 		return NULL;
 
-	return &val->value.array;
+	return &((json_value_t *)val)->value.array;
 }
 
 const json_value_t *json_object_find(const char *name,
@@ -735,6 +797,22 @@ const json_value_t *json_object_next_value(const json_value_t *prev,
 	return &memb->value;
 }
 
+int json_object_push(const char *name, json_value_t *val, json_object_t *obj)
+{
+	json_member_t *memb;
+	int len;
+
+	len = strlen(name);
+	memb = (json_member_t *)malloc(offsetof(json_member_t, name) + len + 1);
+	if (!memb)
+		return -1;
+
+	memcpy(memb->name, name, len + 1);
+	__move_json_value(val, &memb->value);
+	__insert_json_member(memb, obj);
+	return 0;
+}
+
 int json_array_size(const json_array_t *arr)
 {
 	return arr->size;
@@ -759,5 +837,18 @@ const json_value_t *json_array_next_value(const json_value_t *prev,
 
 	elem = list_entry(pos, json_element_t, list);
 	return &elem->value;
+}
+
+int json_array_push(json_value_t *val, json_array_t *arr)
+{
+	json_element_t *elem;
+
+	elem = (json_element_t *)malloc(sizeof (json_element_t));
+	if (!elem)
+		return -1;
+
+	__move_json_value(val, &elem->value);
+	list_add_tail(&elem->list, &arr->head);
+	return 0;
 }
 

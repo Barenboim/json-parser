@@ -20,14 +20,15 @@ extern "C"
 {
 #endif
 
-json_value_t *json_value_create(const char *doc);
+json_value_t *json_value_parse(const char *doc);
+json_value_t *json_value_create(int type, ...);
 void json_value_destroy(json_value_t *val);
 
 int json_value_type(const json_value_t *val);
 const char *json_value_string(const json_value_t *val);
 double json_value_number(const json_value_t *val);
-const json_object_t *json_value_object(const json_value_t *val);
-const json_array_t *json_value_array(const json_value_t *val);
+json_object_t *json_value_object(const json_value_t *val);
+json_array_t *json_value_array(const json_value_t *val);
 
 const json_value_t *json_object_find(const char *name,
 									 const json_object_t *obj);
@@ -36,10 +37,13 @@ const char *json_object_next_name(const char *prev,
 								  const json_object_t *obj);
 const json_value_t *json_object_next_value(const json_value_t *prev,
 										   const json_object_t *obj);
+int json_object_push(const char *name, json_value_t *val, json_object_t *obj);
 
 int json_array_size(const json_array_t *arr);
 const json_value_t *json_array_next_value(const json_value_t *val,
 										  const json_array_t *arr);
+int json_array_push(json_value_t *val, json_array_t *arr);
+
 
 #ifdef __cplusplus
 }
