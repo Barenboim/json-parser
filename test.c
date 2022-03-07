@@ -150,7 +150,7 @@ int main()
 		exit(1);
 	}
 
-	json_value_t *val = json_value_create(buf);
+	json_value_t *val = json_value_parse(buf);
 	if (val)
 	{
 		print_json_value(val, 0);

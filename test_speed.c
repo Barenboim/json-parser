@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 
 	for (i = 0; i < rep; i++)
 	{
-		json_value_t *val = json_value_create(buf);
+		json_value_t *val = json_value_parse(buf);
 		if (val)
 		{
 			json_value_destroy(val);
