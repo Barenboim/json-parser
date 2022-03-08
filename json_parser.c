@@ -100,29 +100,6 @@ static int __json_string_length(const char *cursor)
 	return len;
 }
 
-static void __move_json_value(json_value_t *src, json_value_t *dest)
-{
-	switch (src->type)
-	{
-	case JSON_VALUE_STRING:
-		dest->value.string = src->value.string;
-		break;
-	case JSON_VALUE_NUMBER:
-		dest->value.number = src->value.number;
-		break;
-	case JSON_VALUE_OBJECT:
-		dest->value.object.root.rb_node = src->value.object.root.rb_node;
-		list_splice(&dest->value.object.head, &src->value.object.head);
-		break;
-	case JSON_VALUE_ARRAY:
-		list_splice(&dest->value.array.head, &src->value.array.head);
-		break;
-	}
-
-	dest->type = src->type;
-	free(src);
-}
-
 static int __parse_json_hex4(const char *cursor, const char **end,
 							 unsigned int *code)
 {
@@ -611,6 +588,31 @@ static int __parse_json_object(const char *cursor, const char **end,
 
 	obj->size = ret;
 	return 0;
+}
+
+static void __move_json_value(json_value_t *src, json_value_t *dest)
+{
+	switch (src->type)
+	{
+	case JSON_VALUE_STRING:
+		dest->value.string = src->value.string;
+		break;
+	case JSON_VALUE_NUMBER:
+		dest->value.number = src->value.number;
+		break;
+	case JSON_VALUE_OBJECT:
+		INIT_LIST_HEAD(&dest->value.object.head);
+		list_splice(&src->value.object.head, &dest->value.object.head);
+		dest->value.object.root.rb_node = src->value.object.root.rb_node;
+		break;
+	case JSON_VALUE_ARRAY:
+		INIT_LIST_HEAD(&dest->value.array.head);
+		list_splice(&src->value.array.head, &dest->value.array.head);
+		break;
+	}
+
+	dest->type = src->type;
+	free(src);
 }
 
 json_value_t *json_value_parse(const char *doc)
