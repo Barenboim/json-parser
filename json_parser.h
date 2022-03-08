@@ -37,12 +37,14 @@ const char *json_object_next_name(const char *prev,
 								  const json_object_t *obj);
 const json_value_t *json_object_next_value(const json_value_t *prev,
 										   const json_object_t *obj);
-int json_object_push(const char *name, json_value_t *val, json_object_t *obj);
+const json_value_t *json_object_push(const char *name, json_value_t *val,
+									 json_object_t *obj);
 
 int json_array_size(const json_array_t *arr);
 const json_value_t *json_array_next_value(const json_value_t *val,
 										  const json_array_t *arr);
-int json_array_push(json_value_t *val, json_array_t *arr);
+const json_value_t *json_array_push(json_value_t *val,
+									json_array_t *arr);
 
 
 #ifdef __cplusplus

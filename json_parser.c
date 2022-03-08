@@ -799,7 +799,8 @@ const json_value_t *json_object_next_value(const json_value_t *prev,
 	return &memb->value;
 }
 
-int json_object_push(const char *name, json_value_t *val, json_object_t *obj)
+const json_value_t *json_object_push(const char *name, json_value_t *val,
+									 json_object_t *obj)
 {
 	json_member_t *memb;
 	int len;
@@ -807,12 +808,12 @@ int json_object_push(const char *name, json_value_t *val, json_object_t *obj)
 	len = strlen(name);
 	memb = (json_member_t *)malloc(offsetof(json_member_t, name) + len + 1);
 	if (!memb)
-		return -1;
+		return NULL;
 
 	memcpy(memb->name, name, len + 1);
 	__move_json_value(val, &memb->value);
 	__insert_json_member(memb, obj);
-	return 0;
+	return &memb->value;
 }
 
 int json_array_size(const json_array_t *arr)
@@ -841,16 +842,17 @@ const json_value_t *json_array_next_value(const json_value_t *prev,
 	return &elem->value;
 }
 
-int json_array_push(json_value_t *val, json_array_t *arr)
+const json_value_t *json_array_push(json_value_t *val,
+									json_array_t *arr)
 {
 	json_element_t *elem;
 
 	elem = (json_element_t *)malloc(sizeof (json_element_t));
 	if (!elem)
-		return -1;
+		return NULL;
 
 	__move_json_value(val, &elem->value);
 	list_add_tail(&elem->list, &arr->head);
-	return 0;
+	return &elem->value;
 }
 
