@@ -590,6 +590,32 @@ static int __parse_json_object(const char *cursor, const char **end,
 	return 0;
 }
 
+static int __set_json_value(int type, va_list ap, json_value_t *val)
+{
+	switch (type)
+	{
+	case JSON_VALUE_STRING:
+		val->value.string = strdup(va_arg(ap, const char *));
+		break;
+	case JSON_VALUE_NUMBER:
+		val->value.number = va_arg(ap, double);
+		break;
+	case JSON_VALUE_OBJECT:
+		INIT_LIST_HEAD(&val->value.object.head);
+		val->value.object.root.rb_node = NULL;
+		break;
+	case JSON_VALUE_ARRAY:
+		INIT_LIST_HEAD(&val->value.array.head);
+		break;
+	}
+
+	if (type == JSON_VALUE_STRING && !val->value.string)
+		return -1;
+
+	val->type = type;
+	return 0;
+}
+
 static void __move_json_value(json_value_t *src, json_value_t *dest)
 {
 	switch (src->type)
@@ -613,6 +639,20 @@ static void __move_json_value(json_value_t *src, json_value_t *dest)
 
 	dest->type = src->type;
 	free(src);
+}
+
+static json_member_t *__new_json_member(const char *name)
+{
+	json_member_t *memb;
+	int len;
+
+	len = strlen(name);
+	memb = (json_member_t *)malloc(offsetof(json_member_t, name) + len + 1);
+	if (!memb)
+		return NULL;
+
+	memcpy(memb->name, name, len + 1);
+	return memb;
 }
 
 json_value_t *json_value_parse(const char *doc)
@@ -653,37 +693,21 @@ json_value_t *json_value_create(int type, ...)
 {
 	json_value_t *val;
 	va_list ap;
+	int ret;
 
 	val = (json_value_t *)malloc(sizeof (json_value_t));
 	if (!val)
 		return NULL;
 
 	va_start(ap, type);
-	switch (type)
-	{
-	case JSON_VALUE_STRING:
-		val->value.string = strdup(va_arg(ap, const char *));
-		break;
-	case JSON_VALUE_NUMBER:
-		val->value.number = va_arg(ap, double);
-		break;
-	case JSON_VALUE_OBJECT:
-		INIT_LIST_HEAD(&val->value.object.head);
-		val->value.object.root.rb_node = NULL;
-		break;
-	case JSON_VALUE_ARRAY:
-		INIT_LIST_HEAD(&val->value.array.head);
-		break;
-	}
-
+	ret = __set_json_value(type, ap, val);
 	va_end(ap);
-	if (type == JSON_VALUE_STRING && !val->value.string)
+	if (ret < 0)
 	{
 		free(val);
 		return NULL;
 	}
 
-	val->type = type;
 	return val;
 }
 
@@ -803,16 +827,39 @@ const json_value_t *json_object_push(const char *name, json_value_t *val,
 									 json_object_t *obj)
 {
 	json_member_t *memb;
-	int len;
 
-	len = strlen(name);
-	memb = (json_member_t *)malloc(offsetof(json_member_t, name) + len + 1);
+	memb = __new_json_member(name);
 	if (!memb)
 		return NULL;
 
-	memcpy(memb->name, name, len + 1);
 	__move_json_value(val, &memb->value);
 	__insert_json_member(memb, obj);
+	obj->size++;
+	return &memb->value;
+}
+
+const json_value_t *json_object_append(json_object_t *obj,
+									   const char *name, int type, ...)
+{
+	json_member_t *memb;
+	va_list ap;
+	int ret;
+
+	memb = __new_json_member(name);
+	if (!memb)
+		return NULL;
+
+	va_start(ap, type);
+	ret = __set_json_value(type, ap, &memb->value);
+	va_end(ap);
+	if (ret < 0)
+	{
+		free(memb);
+		return NULL;
+	}
+
+	__insert_json_member(memb, obj);
+	obj->size++;
 	return &memb->value;
 }
 
@@ -853,6 +900,32 @@ const json_value_t *json_array_push(json_value_t *val,
 
 	__move_json_value(val, &elem->value);
 	list_add_tail(&elem->list, &arr->head);
+	arr->size++;
+	return &elem->value;
+}
+
+const json_value_t *json_array_append(json_array_t *arr,
+									  int type, ...)
+{
+	json_element_t *elem;
+	va_list ap;
+	int ret;
+
+	elem = (json_element_t *)malloc(sizeof (json_element_t));
+	if (!elem)
+		return NULL;
+
+	va_start(ap, type);
+	ret = __set_json_value(type, ap, &elem->value);
+	va_end(ap);
+	if (ret < 0)
+	{
+		free(elem);
+		return NULL;
+	}
+
+	list_add_tail(&elem->list, &arr->head);
+	arr->size++;
 	return &elem->value;
 }
 
