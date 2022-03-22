@@ -13,7 +13,7 @@ $ ./parse_json < xxx.json
 ~~~bash
 $ time ./test_speed <repeat times> < xxx.json
 ~~~
-# Parsing and Reading Interfaces
+# Main Interfaces
 
 ### JSON value related
 ~~~c
