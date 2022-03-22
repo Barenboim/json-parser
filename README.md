@@ -39,24 +39,24 @@ void json_value_destroy(json_value_t *val);
 int json_value_type(const json_value_t *val);
 
 /* Obtain the JSON string. The function returns the string or
-   returns NULL if the type of @val's is not a STRING type.
+   returns NULL if the type of @val's is not JSON_VALUE_STRING.
    @val: JSON value */
 const char *json_value_string(const json_value_t *val);
 
 /* Obtain the JSON number. The function returns the number or
-   returns NAN if the type of @val is not a NUMBER type.
+   returns NAN if the type of @val is not JSON_VALUE_NUMBER.
    @val: JSON value */
 double json_value_number(const json_value_t *val);
 
 /* Obtain JSON object. The function returns the JSON object or
-   returns NULL if the type of @val is not an OBJECT type.
+   returns NULL if the type of @val is not JSON_VALUE_OBJECT.
    @val: JSON value
    Note: The returned pointer to JSON object is not const.
          You may extend the object using buiding functions. */
 json_object_t *json_value_object(const json_value_t *val);
 
 /* Obtain JSON arary. The function returns the JSON array or
-   returns NULL if the type of @val is not ARRAY type.
+   returns NULL if the type of @val is not JSON_VALUE_ARRAY.
    @val: JSON value
    Note: The returned pointer to the JSON array is not const and
          can been extended by using building functions. */
