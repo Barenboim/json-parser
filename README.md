@@ -18,7 +18,7 @@ $ time ./test_speed <repeat times> < xxx.json
 ### JSON value related
 ~~~c
 /* Parse JSON document and generate a JSON value. Returns NULL on parsing
-   failures (Invalid JSON document, nesting too deep, memory allocation failure).
+   failures (Invalid JSON, nesting too deep, memory allocation failure).
    @doc JSON document */
 json_value_t *json_value_parse(const char *doc);
 
@@ -68,9 +68,9 @@ json_array_t *json_value_array(const json_value_t *val);
    @obj: JSON object */
 int json_object_size(const json_object_t *obj);
 
-/* Find the JSON value under the key @name. Returns NULL if @name can not be found.
-   The time complexity of this function is O(log(n)),
-   where n is the size of the JSON object.
+/* Find the JSON value under the key @name. Returns NULL if @name
+   can not be found. The time complexity of this function is
+   O(log(n)), where n is the size of the JSON object.
    @name: The key to find
    @obj: JSON object
    Note: The returned pointer to JSON value is const. */
