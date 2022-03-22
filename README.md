@@ -27,7 +27,7 @@ json_value_t *json_value_parse(const char *doc);
 void json_value_destroy(json_value_t *val);
 
 /* Return JSON value's type
-     Return value:
+     Return values:
      JSON_VALUE_STRING: string
      JSON_VALUE_NUMBER: number
      JSON_VALUE_OBJECT: JSON object
