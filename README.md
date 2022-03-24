@@ -78,8 +78,8 @@ int json_object_size(const json_object_t *obj);
 const json_value_t *json_object_find(const char *name, const json_object_t *obj);
 
 /* Traversing the JSON object
-   @name: Temperary (const char *) pointer for each key
-   @val: Temperary (const json_value_t *) pointer for each JSON value
+   @name: Temporary (const char *) pointer for each key
+   @val: Temporary (const json_value_t *) pointer for each JSON value
    @obj: JSON object
    NOTE: This is not a function. It's a macro of a loop. */
 json_object_for_each(name, val, obj)
@@ -93,7 +93,7 @@ json_object_for_each(name, val, obj)
 int json_array_size(const json_array_t *arr);
 
 /* Traversing the JSON array
-   @val: Temperary (const json_value_t *) pointer for each JSON value
+   @val: Temporary (const json_value_t *) pointer for each JSON value
    @arr: JSON array
    NOTE: This is not a function. It's a macro of a loop. */
 json_array_for_each(val, arr)
