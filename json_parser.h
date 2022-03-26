@@ -47,7 +47,6 @@ const json_value_t *json_array_next_value(const json_value_t *val,
 const json_value_t *json_array_append(json_array_t *arry,
 									  int type, ...);
 
-
 #ifdef __cplusplus
 }
 #endif
