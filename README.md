@@ -1,5 +1,5 @@
-# Json Parser in Standard C (C99)
-This json parser is created for the project of [C++ Workflow](https://github.com/sogou/workflow).  
+# Json Parser in ANSI-C (C89)
+This json parser was created for the project of [C++ Workflow](https://github.com/sogou/workflow).  
 # Build tests
 ~~~bash
 $ make
@@ -39,7 +39,7 @@ void json_value_destroy(json_value_t *val);
 int json_value_type(const json_value_t *val);
 
 /* Obtain the JSON string. The function returns the string or
-   returns NULL if the type of @val's is not JSON_VALUE_STRING.
+   returns NULL if the type of @val is not JSON_VALUE_STRING.
    @val: JSON value */
 const char *json_value_string(const json_value_t *val);
 
