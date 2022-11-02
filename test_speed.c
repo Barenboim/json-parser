@@ -49,7 +49,9 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	printf("Add a sentence to see how git work\n");
+	printf("Add two sentences to see how git work\n");
+	printf("Add two sentences to see how git work\n");
+
 
 	return 0;
 }
