@@ -53,6 +53,9 @@ int main(int argc, char *argv[])
 	printf("Add two sentences to see how git work\n");
 
 
+	printf("This is a sentence coming from the dev branch\n");
+
+
 	return 0;
 }
 
