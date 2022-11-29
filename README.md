@@ -107,7 +107,7 @@ All the following functions return NULL on failure of allocating memory.
    Note: Variable argument. Example:
      v_str = json_value_create(JSON_VALUE_STRING, "hello");
      v_num = json_value_create(JSON_VALUE_NUMBER, 3.14);
-	 v_num = json_value_create(JSON_VALUE_NUMBER, (double)100);
+     v_int = json_value_create(JSON_VALUE_NUMBER, (double)100);
      v_obj = json_value_create(JSON_VALUE_OBJECT);
      v_arr = json_value_create(JSON_VALUE_ARRAY);
      v_true = json_value_create(JSON_VALUE_TRUE);
@@ -121,7 +121,7 @@ json_value_t *json_value_create(int type, ...);
    Note: Variable argument. Example:
      v_num = json_object_append(obj, "pi", JSON_VALUE_NUMBER, 3.14);
      v_obj = json_object_append(obj, "user", JSON_VALUE_OBJECT);
-	 v_from_doc = json_object_append(obj, "doc", 0, json_value_parse("{\"data\" : [1, 2, 3]}")); */
+     v_from_doc = json_object_append(obj, "doc", 0, json_value_parse("{\"data\" : [1, 2, 3]}")); */
 const json_value_t *json_object_append(json_object_t *obj, const char *name,
                                        int type, ...);
 
@@ -138,8 +138,8 @@ json_value_t *json_object_remove(const json_value_t *val,
    @type: New member's value type or zero which means another JSON value
    Note: Variable argument. Example:
      v_str = json_array_append(arr, JSON_VALUE_STRING, "hello");
-	 equal to:
-	 v_str = json_array_append(arr, 0, json_value_create(JSON_VALUE_STRING, "hello")); */
+     equal to:
+     v_str = json_array_append(arr, 0, json_value_create(JSON_VALUE_STRING, "hello")); */
 const json_value_t *json_array_append(json_array_t *arr, int type, ...);
 
 /* Remove a JSON value from a JSON array and return the value.
