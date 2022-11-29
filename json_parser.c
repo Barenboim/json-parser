@@ -845,6 +845,24 @@ const json_value_t *json_object_append(json_object_t *obj,
 	return &memb->value;
 }
 
+json_value_t *json_object_remove(const json_value_t *val,
+								 json_object_t *obj)
+{
+	json_member_t *memb = list_entry(val, json_member_t, value);
+
+	val = (json_value_t *)malloc(sizeof (json_value_t));
+	if (!val)
+		return NULL;
+
+	list_del(&memb->list);
+	rb_erase(&memb->rb, &obj->root);
+	obj->size--;
+
+	__move_json_value(&memb->value, (json_value_t *)val);
+	free(memb);
+	return (json_value_t *)val;
+}
+
 int json_array_size(const json_array_t *arr)
 {
 	return arr->size;
@@ -894,5 +912,22 @@ const json_value_t *json_array_append(json_array_t *arr,
 	list_add_tail(&elem->list, &arr->head);
 	arr->size++;
 	return &elem->value;
+}
+
+json_value_t *json_array_remove(const json_value_t *val,
+								json_array_t *arr)
+{
+	json_element_t *elem = list_entry(val, json_element_t, value);
+
+	val = (json_value_t *)malloc(sizeof (json_value_t));
+	if (!val)
+		return NULL;
+
+	list_del(&elem->list);
+	arr->size--;
+
+	__move_json_value(&elem->value, (json_value_t *)val);
+	free(elem);
+	return (json_value_t *)val;
 }
 
