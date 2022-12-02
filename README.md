@@ -1,4 +1,4 @@
-# Json Parser in ANSI-C (C89)
+# Json Parser in ANSI-C (C99)
 This json parser was created for the project of [C++ Workflow](https://github.com/sogou/workflow).  
 # Build tests
 ~~~bash

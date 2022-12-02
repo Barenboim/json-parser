@@ -561,9 +561,11 @@ static void __destroy_json_value(json_value_t *val)
 	case JSON_VALUE_STRING:
 		free(val->value.string);
 		break;
+
 	case JSON_VALUE_OBJECT:
 		__destroy_json_members(&val->value.object);
 		break;
+
 	case JSON_VALUE_ARRAY:
 		__destroy_json_elements(&val->value.array);
 		break;
@@ -598,15 +600,18 @@ static void __move_json_value(json_value_t *src, json_value_t *dest)
 	case JSON_VALUE_STRING:
 		dest->value.string = src->value.string;
 		break;
+
 	case JSON_VALUE_NUMBER:
 		dest->value.number = src->value.number;
 		break;
+
 	case JSON_VALUE_OBJECT:
 		INIT_LIST_HEAD(&dest->value.object.head);
 		list_splice(&src->value.object.head, &dest->value.object.head);
 		dest->value.object.root.rb_node = src->value.object.root.rb_node;
 		dest->value.object.size = src->value.object.size;
 		break;
+
 	case JSON_VALUE_ARRAY:
 		INIT_LIST_HEAD(&dest->value.array.head);
 		list_splice(&src->value.array.head, &dest->value.array.head);
@@ -620,30 +625,40 @@ static void __move_json_value(json_value_t *src, json_value_t *dest)
 
 static int __set_json_value(int type, va_list ap, json_value_t *val)
 {
+	const void *str;
+	int len;
+
 	switch (type)
 	{
 	case 0:
 		__move_json_value(va_arg(ap, json_value_t *), val);
 		return 0;
+
 	case JSON_VALUE_STRING:
-		val->value.string = strdup(va_arg(ap, const char *));
+		str = va_arg(ap, const char *);
+		len = strlen(str);
+		val->value.string = (char *)malloc(len + 1);
+		if (!val->value.string)
+			return -1;
+
+		memcpy(val->value.string, str, len + 1);
 		break;
+
 	case JSON_VALUE_NUMBER:
 		val->value.number = va_arg(ap, double);
 		break;
+
 	case JSON_VALUE_OBJECT:
 		INIT_LIST_HEAD(&val->value.object.head);
 		val->value.object.root.rb_node = NULL;
 		val->value.object.size = 0;
 		break;
+
 	case JSON_VALUE_ARRAY:
 		INIT_LIST_HEAD(&val->value.array.head);
 		val->value.array.size = 0;
 		break;
 	}
-
-	if (type == JSON_VALUE_STRING && !val->value.string)
-		return -1;
 
 	val->type = type;
 	return 0;
