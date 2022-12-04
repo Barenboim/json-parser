@@ -626,7 +626,7 @@ static void __move_json_value(json_value_t *src, json_value_t *dest)
 
 static int __set_json_value(int type, va_list ap, json_value_t *val)
 {
-	const void *str;
+	const char *str;
 	int len;
 
 	switch (type)
@@ -875,10 +875,10 @@ const json_value_t *json_object_prev_value(const json_value_t *val,
 	return &memb->value;
 }
 
-static const json_value_t *__json_object_insert(struct list_head *pos,
-												json_object_t *obj,
-												const char *name,
-												int type, va_list ap)
+static const json_value_t *__json_object_insert(const char *name,
+												int type, va_list ap,
+												struct list_head *pos,
+												json_object_t *obj)
 {
 	json_member_t *memb;
 	int len;
@@ -908,7 +908,7 @@ const json_value_t *json_object_append(json_object_t *obj,
 	va_list ap;
 
 	va_start(ap, type);
-	val = __json_object_insert(obj->head.prev, obj, name, type, ap);
+	val = __json_object_insert(name, type, ap, obj->head.prev, obj);
 	va_end(ap);
 	return val;
 }
@@ -927,7 +927,7 @@ const json_value_t *json_object_insert_after(const json_value_t *val,
 		pos = &obj->head;
 
 	va_start(ap, type);
-	val = __json_object_insert(pos, obj, name, type, ap);
+	val = __json_object_insert(name, type, ap, pos, obj);
 	va_end(ap);
 	return val;
 }
@@ -946,7 +946,7 @@ const json_value_t *json_object_insert_before(const json_value_t *val,
 		pos = obj->head.prev;
 
 	va_start(ap, type);
-	val = __json_object_insert(pos, obj, name, type, ap);
+	val = __json_object_insert(name, type, ap, pos, obj);
 	va_end(ap);
 	return val;
 }
@@ -1016,9 +1016,9 @@ const json_value_t *json_array_prev_value(const json_value_t *val,
 	return &elem->value;
 }
 
-static const json_value_t *__json_array_insert(struct list_head *pos,
-											   json_array_t *arr,
-											   int type, va_list ap)
+static const json_value_t *__json_array_insert(int type, va_list ap,
+											   struct list_head *pos,
+											   json_array_t *arr)
 {
 	json_element_t *elem;
 
@@ -1044,7 +1044,7 @@ const json_value_t *json_array_append(json_array_t *arr,
 	va_list ap;
 
 	va_start(ap, type);
-	val = __json_array_insert(arr->head.prev, arr, type, ap);
+	val = __json_array_insert(type, ap, arr->head.prev, arr);
 	va_end(ap);
 	return val;
 }
@@ -1062,7 +1062,7 @@ const json_value_t *json_array_insert_after(const json_value_t *val,
 		pos = &arr->head;
 
 	va_start(ap, type);
-	val = __json_array_insert(pos, arr, type, ap);
+	val = __json_array_insert(type, ap, pos, arr);
 	va_end(ap);
 	return val;
 }
@@ -1080,7 +1080,7 @@ const json_value_t *json_array_insert_before(const json_value_t *val,
 		pos = arr->head.prev;
 
 	va_start(ap, type);
-	val = __json_array_insert(pos, arr, type, ap);
+	val = __json_array_insert(type, ap, pos, arr);
 	va_end(ap);
 	return val;
 }
