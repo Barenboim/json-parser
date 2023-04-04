@@ -1,3 +1,4 @@
+[English version](/README.md)
 # 基于标准C(C99)的JSON解析器
 项目最初是为[C++ Workflow](https://github.com/sogou/workflow)项目开发的JSON解析。
 # 编译项目测试代码
