@@ -78,13 +78,13 @@ int json_object_size(const json_object_t *obj);
    Note: The returned pointer to JSON value is const. */
 const json_value_t *json_object_find(const char *name, const json_object_t *obj);
 
-/* Traversing the JSON object
+/* Traversing the JSON object forward or backward
    @name: Temporary (const char *) pointer for each key
    @val: Temporary (const json_value_t *) pointer for each JSON value
    @obj: JSON object
-   NOTE: This is not a function. It's a macro of a loop. */
+   NOTE: These are not functions, but macros of looping. */
 json_object_for_each(name, val, obj)
-
+json_object_for_each_prev(name, val, obj)
 ~~~
 
 ### JSON array related
@@ -93,11 +93,12 @@ json_object_for_each(name, val, obj)
    @arr：JSON array */
 int json_array_size(const json_array_t *arr);
 
-/* Traversing the JSON array
+/* Traversing the JSON array forward or backward
    @val: Temporary (const json_value_t *) pointer for each JSON value
    @arr: JSON array
-   NOTE: This is not a function. It's a macro of a loop. */
+   NOTE: These are not functions, but macros of looping. */
 json_array_for_each(val, arr)
+json_array_for_each_prev(val, arr)
 ~~~
 
 ### Building JSON
