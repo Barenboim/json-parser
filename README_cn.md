@@ -68,13 +68,13 @@ int json_object_size(const json_object_t *obj);
    注意返回的json_value_t指针带const。*/
 const json_value_t *json_object_find(const char *name, const json_object_t *obj);
 
-/* 遍历JSON object
+/* 向前或向后遍历JSON object
    @name：临时的const char *类型name字符串
    @val：临时的const json_value_t *类型的JSON value对象
    @obj：JSON object对象
-   这不是一个函数，是一个展开成一个for循环的宏。 */
+   这是两个宏，会被展开成for循环。 */
 json_object_for_each(name, val, obj)
-
+json_object_for_each_prev(name, val, obj)
 ~~~
 ### JSON array相关接口
 ~~~c
@@ -82,11 +82,12 @@ json_object_for_each(name, val, obj)
    @arr：JSON array对象 */
 int json_array_size(const json_array_t *arr);
 
-/* 遍历JSON array
+/* 向前或向后遍历JSON array
    @val：临时的const json_value_t *类型的JSON value对象
    @arr：JSON array对象
-   同样，这是一个展开成for循环的宏。 */
+   同样，这是展开成for循环的宏。 */
 json_array_for_each(val, arr)
+json_array_for_each_prev(val, arr)
 ~~~
 
 ### JSON building相关接口
