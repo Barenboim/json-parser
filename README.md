@@ -20,11 +20,11 @@ $ time ./test_speed <repeat times> < xxx.json
 ~~~c
 /* Parse JSON document and create a JSON value. Returns NULL on parsing
    failures (Invalid JSON, nesting too deep, memory allocation failure).
-   @doc JSON document */
+   @doc: JSON document */
 json_value_t *json_value_parse(const char *doc);
 
 /* Destroy the JSON value
-   @val JSON value. Typically created by the parsing function. */
+   @val: JSON value. Typically created by the parsing function. */
 void json_value_destroy(json_value_t *val);
 
 /* Get JSON value's type
