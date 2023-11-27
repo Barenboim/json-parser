@@ -18,11 +18,11 @@ $ time ./test_speed <重复次数> < xxx.json
 ### JSON value相关接口
 ~~~c
 /* 解析JSON文档产生JSON value。返回JSON value对象。返回NULL代表解析失败（格式不标准，嵌套过深，分配内存失败）
-   @doc 文档字符串 */
+   @doc：文档字符串 */
 json_value_t *json_value_parse(const char *doc);
 
 /* 销毁JSON value
-   @val JSON value对象。一般由parse函数产生。*/
+   @val：JSON value对象。一般由parse函数产生。*/
 void json_value_destroy(json_value_t *val);
 
 /* 返回JSON value类型
