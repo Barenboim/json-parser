@@ -5,3 +5,9 @@ root = true
 [*]
 indent_style = tab
 indent_size = 4
+[list.h]
+indent_style = tab
+indent_size = 8
+[rbtree.*]
+indent_style = tab
+indent_size = 8
