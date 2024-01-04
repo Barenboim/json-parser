@@ -365,7 +365,7 @@ static double __evaluate_json_number(const char *integer,
 	num = mant;
 	if (exp != 0 && figures != 0)
 	{
-		if (exp > 309 - figures)
+		if (exp > 291)
 			num = INFINITY;
 		else if (exp > 0)
 			num *= __power_of_10[exp];
