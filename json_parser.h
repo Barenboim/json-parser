@@ -31,7 +31,7 @@ json_object_t *json_value_object(const json_value_t *val);
 json_array_t *json_value_array(const json_value_t *val);
 
 const json_value_t *json_object_find(const char *name,
-									 const json_object_t *obj);
+									 json_object_t *obj);
 int json_object_size(const json_object_t *obj);
 const char *json_object_next_name(const char *name,
 								  const json_object_t *obj);

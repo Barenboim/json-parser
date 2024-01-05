@@ -956,7 +956,7 @@ json_array_t *json_value_array(const json_value_t *val)
 }
 
 const json_value_t *json_object_find(const char *name,
-									 const json_object_t *obj)
+									 json_object_t *obj)
 {
 	struct rb_node *p = obj->root.rb_node;
 	struct list_head *pos;
