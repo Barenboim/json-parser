@@ -450,28 +450,6 @@ static int __parse_json_number(const char *cursor, const char **end,
 	return 0;
 }
 
-static void __insert_json_member(json_member_t *memb, struct list_head *pos,
-								 json_object_t *obj)
-{
-	struct rb_node **p = &obj->root.rb_node;
-	struct rb_node *parent = NULL;
-	json_member_t *entry;
-
-	while (*p)
-	{
-		parent = *p;
-		entry = rb_entry(*p, json_member_t, rb);
-		if (strcmp(memb->name, entry->name) < 0)
-			p = &(*p)->rb_left;
-		else
-			p = &(*p)->rb_right;
-	}
-
-	rb_link_node(&memb->rb, parent, p);
-	rb_insert_color(&memb->rb, &obj->root);
-	list_add(&memb->list, pos);
-}
-
 static int __parse_json_value(const char *cursor, const char **end,
 							  int depth, json_value_t *val);
 
@@ -541,7 +519,7 @@ static int __parse_json_members(const char *cursor, const char **end,
 			return ret;
 		}
 
-		__insert_json_member(memb, obj->head.prev, obj);
+		list_add_tail(&memb->list, &obj->head);
 		cnt++;
 
 		while (isspace(*cursor))
@@ -866,6 +844,26 @@ static int __set_json_value(int type, va_list ap, json_value_t *val)
 	return 0;
 }
 
+static void __index_json_member(json_member_t *memb, json_object_t *obj)
+{
+	struct rb_node **p = &obj->root.rb_node;
+	struct rb_node *parent = NULL;
+	json_member_t *entry;
+
+	while (*p)
+	{
+		parent = *p;
+		entry = rb_entry(*p, json_member_t, rb);
+		if (strcmp(memb->name, entry->name) < 0)
+			p = &(*p)->rb_left;
+		else
+			p = &(*p)->rb_right;
+	}
+
+	rb_link_node(&memb->rb, parent, p);
+	rb_insert_color(&memb->rb, &obj->root);
+}
+
 json_value_t *json_value_parse(const char *doc)
 {
 	json_value_t *val;
@@ -961,8 +959,20 @@ const json_value_t *json_object_find(const char *name,
 									 const json_object_t *obj)
 {
 	struct rb_node *p = obj->root.rb_node;
+	struct list_head *pos;
 	json_member_t *memb;
 	int n;
+
+	if (!p)
+	{
+		list_for_each(pos, &obj->head)
+		{
+			memb = list_entry(pos, json_member_t, list);
+			__index_json_member(memb, obj);
+		}
+
+		p = obj->root.rb_node;
+	}
 
 	while (p)
 	{
@@ -1068,8 +1078,12 @@ static const json_value_t *__json_object_insert(const char *name,
 		return NULL;
 	}
 
-	__insert_json_member(memb, pos, obj);
+	list_add(&memb->list, pos);
 	obj->size++;
+
+	if (obj->root.rb_node)
+		__index_json_member(memb, obj);
+
 	return &memb->value;
 }
 
@@ -1133,8 +1147,10 @@ json_value_t *json_object_remove(const json_value_t *val,
 	if (!val)
 		return NULL;
 
+	if (obj->root.rb_node)
+		rb_erase(&memb->rb, &obj->root);
+
 	list_del(&memb->list);
-	rb_erase(&memb->rb, &obj->root);
 	obj->size--;
 
 	__move_json_value(&memb->value, (json_value_t *)val);
