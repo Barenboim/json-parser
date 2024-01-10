@@ -866,7 +866,7 @@ static int __set_json_value(int type, va_list ap, json_value_t *val)
 	return 0;
 }
 
-json_value_t *json_value_parse(const char *doc)
+json_value_t *json_value_parse(const char *cursor)
 {
 	json_value_t *val;
 
@@ -874,15 +874,15 @@ json_value_t *json_value_parse(const char *doc)
 	if (!val)
 		return NULL;
 
-	while (isspace(*doc))
-		doc++;
+	while (isspace(*cursor))
+		cursor++;
 
-	if (__parse_json_value(doc, &doc, 0, val) >= 0)
+	if (__parse_json_value(cursor, &cursor, 0, val) >= 0)
 	{
-		while (isspace(*doc))
-			doc++;
+		while (isspace(*cursor))
+			cursor++;
 
-		if (*doc == '\0')
+		if (*cursor == '\0')
 			return val;
 
 		__destroy_json_value(val);
