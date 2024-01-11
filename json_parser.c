@@ -56,18 +56,15 @@ static int __json_string_length(const char *cursor)
 {
 	int len = 0;
 
-	while (1)
+	while (*cursor != '\"')
 	{
-		if (*cursor == '\"')
-			break;
-
-		if (*(const unsigned char *)cursor < ' ')
+		if ((unsigned char)*cursor < ' ')
 			return -2;
 
 		cursor++;
 		if (cursor[-1] == '\\')
 		{
-			if (!*cursor)
+			if (*cursor == '\0')
 				return -2;
 
 			cursor++;
