@@ -64,7 +64,7 @@ static int __json_string_length(const char *cursor)
 			if (*cursor == '\0')
 				return -2;
 		}
-		else if ((unsigned char)*cursor < ' ')
+		else if ((unsigned char)*cursor < 0x20)
 			return -2;
 
 		cursor++;
