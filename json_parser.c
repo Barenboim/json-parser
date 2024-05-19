@@ -913,25 +913,26 @@ static int __copy_json_value(const json_value_t *src, json_value_t *dest);
 
 static int __copy_json_members(const json_object_t *src, json_object_t *dest)
 {
-	const char *name;
-	const json_value_t *val;
+	struct list_head *pos;
+	json_member_t *entry;
 	json_member_t *memb;
 	int len;
 
-	json_object_for_each(name, val, src)
+	list_for_each(pos, &src->head)
 	{
-		len = strlen(name);
+		entry = list_entry(pos, json_member_t, list);
+		len = strlen(entry->name);
 		memb = (json_member_t *)malloc(offsetof(json_member_t, name) + len + 1);
 		if (!memb)
 			return -1;
 
-		if (__copy_json_value(val, &memb->value) < 0)
+		if (__copy_json_value(&entry->value, &memb->value) < 0)
 		{
 			free(memb);
 			return -1;
 		}
 
-		memcpy(memb->name, name, len + 1);
+		memcpy(memb->name, entry->name, len + 1);
 		__insert_json_member(memb, dest->head.prev, dest);
 	}
 
@@ -940,16 +941,18 @@ static int __copy_json_members(const json_object_t *src, json_object_t *dest)
 
 static int __copy_json_elements(const json_array_t *src, json_array_t *dest)
 {
-	const json_value_t *val;
+	struct list_head *pos;
+	json_element_t *entry;
 	json_element_t *elem;
 
-	json_array_for_each(val, src)
+	list_for_each(pos, &src->head)
 	{
 		elem = (json_element_t *)malloc(sizeof (json_element_t));
 		if (!elem)
 			return -1;
 
-		if (__copy_json_value(val, &elem->value) < 0)
+		entry = list_entry(pos, json_element_t, list);
+		if (__copy_json_value(&entry->value, &elem->value) < 0)
 		{
 			free(elem);
 			return -1;
@@ -1010,19 +1013,19 @@ static int __copy_json_value(const json_value_t *src, json_value_t *dest)
 
 json_value_t *json_value_copy(const json_value_t *val)
 {
-	json_value_t *dest;
+	json_value_t *copy;
 
-	dest = (json_value_t *)malloc(sizeof (json_value_t));
-	if (!dest)
+	copy = (json_value_t *)malloc(sizeof (json_value_t));
+	if (!copy)
 		return NULL;
 
-	if (__copy_json_value(val, dest) < 0)
+	if (__copy_json_value(val, copy) < 0)
 	{
-		free(dest);
+		free(copy);
 		return NULL;
 	}
 
-	return dest;
+	return copy;
 }
 
 void json_value_destroy(json_value_t *val)
