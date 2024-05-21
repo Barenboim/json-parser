@@ -22,7 +22,7 @@ $ time ./test_speed <重复次数> < xxx.json
 json_value_t *json_value_parse(const char *text);
 
 /* 销毁JSON value
-   @val：JSON value对象。一般由parse函数产生。*/
+   @val：由parse, create或copy生成的JSON value对象。*/
 void json_value_destroy(json_value_t *val);
 
 /* 返回JSON value类型
@@ -102,13 +102,18 @@ json_array_for_each_prev(val, arr)
      v_obj = json_value_create(JSON_VALUE_OBJECT);
      v_arr = json_value_create(JSON_VALUE_ARRAY);
      v_true = json_value_create(JSON_VALUE_TRUE);
-   函数返回一个JSON value对象。非const，因此需要被销毁。 */
+   函数返回一个JSON value对象。非const，因此需要被销毁或转移。 */
 json_value_t *json_value_create(int type, ...);
+
+/* 复制JSON value
+   @val: 被复制的JSON value
+   函数返回一个JSON value对象。非const，因此需要被销毁或转移。 */
+json_value_t *json_value_copy(const json_value_t *val);
 
 /* 扩展一个JSON object，返回被扩展的JSON value
    @obj: JSON object对象
    @name: 扩展的JSON member的name
-   @type: 扩展的JSON member类型，或者传0代表扩展进一个已有的JSON value
+   @type: 扩展的JSON member类型，或者传0代表转移进一个已有的JSON value
    注意这是一个可变参数的函数，示例:
      v_num = json_object_append(obj, "pi", JSON_VALUE_NUMBER, 3.14);
      v_obj = json_object_append(obj, "user", JSON_VALUE_OBJECT);
@@ -119,13 +124,13 @@ const json_value_t *json_object_append(json_object_t *obj, const char *name,
 /* 从JSON object里移除一个value并返回
    @val: 要移除的JSON value
    @obj: JSON object对象
-   注意，返回值非const，需要被销毁，也可以被扩展到其它的JSON object或JSON array */
+   注意，函数不会自动销毁value，而是作为返回值返回让用户自行被销毁或转移。 */
 json_value_t *json_object_remove(const json_value_t *val,
                                  json_object_t *obj);
 
 /* 扩展JSON array，返回被扩展的JSON value
    @arr: JSON array对象
-   @type: 扩展的JSON member类型，或者传0代表传入一个已有的JSON value
+   @type: 扩展的JSON member类型，或者传0代表转移入一个已有的JSON value
    注意这是一个可变参数的函数，示例:
      v_str = json_array_append(arr, JSON_VALUE_STRING, "hello");
      等价于：
@@ -135,7 +140,7 @@ const json_value_t *json_array_append(json_array_t *arr, int type, ...);
 /* 从JSON array里移除一个JSON value并返回
    @val: 要移除的JSON value
    @arr: JSON array对象
-   注意，返回值非const，需要被销毁，也可以被扩展到其它的JSON object或JSON array */
+   注意，函数不会自动销毁value，而是作为返回值返回让用户自行被销毁或转移。 */
 json_value_t *json_array_remove(const json_value_t *val,
                                 json_object_t *arr);
 ~~~
