@@ -13,6 +13,12 @@ void print_json_object(const json_object_t *obj, int depth)
 	int n = 0;
 	int i;
 
+	if (json_object_size(obj) == 0)
+	{
+		printf("{}");
+		return;
+	}
+
 	printf("{\n");
 	json_object_for_each(name, val, obj)
 	{
@@ -36,6 +42,12 @@ void print_json_array(const json_array_t *arr, int depth)
 	const json_value_t *val;
 	int n = 0;
 	int i;
+
+	if (json_array_size(arr) == 0)
+	{
+		printf("[]");
+		return;
+	}
 
 	printf("[\n");
 	json_array_for_each(val, arr)
@@ -83,7 +95,10 @@ void print_json_string(const char *str)
 			printf("\\\\");
 			break;
 		default:
-			printf("%c", *str);
+			if ((unsigned char)*str < 0x20)
+				printf("\\u00%02x", *str);
+			else
+				printf("%c", *str);
 			break;
 		}
 		str++;
