@@ -6,66 +6,6 @@
 
 void print_json_value(const json_value_t *val, int depth);
 
-void print_json_object(const json_object_t *obj, int depth)
-{
-	const char *name;
-	const json_value_t *val;
-	int n = 0;
-	int i;
-
-	if (json_object_size(obj) == 0)
-	{
-		printf("{}");
-		return;
-	}
-
-	printf("{\n");
-	json_object_for_each(name, val, obj)
-	{
-		if (n != 0)
-			printf(",\n");
-		n++;
-		for (i = 0; i < depth + 1; i++)
-			printf("    ");
-		printf("\"%s\": ", name);
-		print_json_value(val, depth + 1);
-	}
-
-	printf("\n");
-	for (i = 0; i < depth; i++)
-		printf("    ");
-	printf("}");
-}
-
-void print_json_array(const json_array_t *arr, int depth)
-{
-	const json_value_t *val;
-	int n = 0;
-	int i;
-
-	if (json_array_size(arr) == 0)
-	{
-		printf("[]");
-		return;
-	}
-
-	printf("[\n");
-	json_array_for_each(val, arr)
-	{
-		if (n != 0)
-			printf(",\n");
-		n++;
-		for (i = 0; i < depth + 1; i++)
-			printf("    ");
-		print_json_value(val, depth + 1);
-	}
-
-	printf("\n");
-	for (i = 0; i < depth; i++)
-		printf("    ");
-	printf("]");
-}
-
 void print_json_string(const char *str)
 {
 	printf("\"");
@@ -104,6 +44,67 @@ void print_json_string(const char *str)
 		str++;
 	}
 	printf("\"");
+}
+
+void print_json_object(const json_object_t *obj, int depth)
+{
+	const char *name;
+	const json_value_t *val;
+	int n = 0;
+	int i;
+
+	if (json_object_size(obj) == 0)
+	{
+		printf("{}");
+		return;
+	}
+
+	printf("{\n");
+	json_object_for_each(name, val, obj)
+	{
+		if (n != 0)
+			printf(",\n");
+		n++;
+		for (i = 0; i < depth + 1; i++)
+			printf("    ");
+		print_json_string(name);
+		printf(": ");
+		print_json_value(val, depth + 1);
+	}
+
+	printf("\n");
+	for (i = 0; i < depth; i++)
+		printf("    ");
+	printf("}");
+}
+
+void print_json_array(const json_array_t *arr, int depth)
+{
+	const json_value_t *val;
+	int n = 0;
+	int i;
+
+	if (json_array_size(arr) == 0)
+	{
+		printf("[]");
+		return;
+	}
+
+	printf("[\n");
+	json_array_for_each(val, arr)
+	{
+		if (n != 0)
+			printf(",\n");
+		n++;
+		for (i = 0; i < depth + 1; i++)
+			printf("    ");
+		print_json_value(val, depth + 1);
+	}
+
+	printf("\n");
+	for (i = 0; i < depth; i++)
+		printf("    ");
+	printf("]");
 }
 
 void print_json_number(double number)
