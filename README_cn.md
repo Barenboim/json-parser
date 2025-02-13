@@ -124,7 +124,7 @@ const json_value_t *json_object_append(json_object_t *obj, const char *name,
 /* 从JSON object里移除一个value并返回
    @val: 要移除的JSON value
    @obj: JSON object对象
-   注意，函数不会自动销毁value，而是作为返回值返回让用户自行被销毁或转移。 */
+   注意，函数不会自动销毁value，而是作为返回值返回让用户自行销毁或转移。 */
 json_value_t *json_object_remove(const json_value_t *val,
                                  json_object_t *obj);
 
@@ -140,7 +140,7 @@ const json_value_t *json_array_append(json_array_t *arr, int type, ...);
 /* 从JSON array里移除一个JSON value并返回
    @val: 要移除的JSON value
    @arr: JSON array对象
-   注意，函数不会自动销毁value，而是作为返回值返回让用户自行被销毁或转移。 */
+   注意，函数不会自动销毁value，而是作为返回值返回让用户自行销毁或转移。 */
 json_value_t *json_array_remove(const json_value_t *val,
                                 json_object_t *arr);
 ~~~
