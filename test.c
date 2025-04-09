@@ -109,12 +109,7 @@ void print_json_array(const json_array_t *arr, int depth)
 
 void print_json_number(double number)
 {
-	long long integer = number;
-
-	if (integer == number)
-		printf("%lld", integer);
-	else
-		printf("%lf", number);
+	printf("%.15lg", number);
 }
 
 void print_json_value(const json_value_t *val, int depth)
