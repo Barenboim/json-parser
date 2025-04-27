@@ -72,7 +72,7 @@ int json_object_size(const json_object_t *obj);
 
 /* Find the JSON value under the key @name. Returns NULL if @name
    can not be found. The time complexity of this function is
-   O(log(n)), where n is the size of the JSON object.
+   O(n), where n is the size of the JSON object.
    @name: The key to find
    @obj: JSON object
    Note: The returned pointer to JSON value is const. */
