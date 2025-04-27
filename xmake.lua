@@ -1,5 +1,5 @@
 set_project("json-parser")
-set_version("1.2.4")
+set_version("1.3.0")
 
 if is_mode("release") then
     set_optimize("faster")
@@ -14,7 +14,7 @@ set_warnings("all")
 
 target("json-parser")
     set_kind("$(kind)")
-    add_files("rbtree.c", "json_parser.c")
+    add_files("json_parser.c")
 
 target("test_speed")
     set_kind("binary")
