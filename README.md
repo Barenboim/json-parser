@@ -68,7 +68,7 @@ json_array_t *json_value_array(const json_value_t *val);
 ~~~c
 /* Get the size of the JSON object.
    @obj: JSON object */
-int json_object_size(const json_object_t *obj);
+size_t json_object_size(const json_object_t *obj);
 
 /* Find the JSON value under the key @name. Returns NULL if @name
    can not be found. The time complexity of this function is
@@ -91,7 +91,7 @@ json_object_for_each_prev(name, val, obj)
 ~~~c
 /* Get the size of the JSON array.
    @arr：JSON array */
-int json_array_size(const json_array_t *arr);
+size_t json_array_size(const json_array_t *arr);
 
 /* Traversing the JSON array forward or backward
    @val: Temporary (const json_value_t *) pointer for each JSON value
