@@ -60,7 +60,7 @@ json_array_t *json_value_array(const json_value_t *val);
 ~~~c
 /* 返回object的大小。即object包含的name，value对数量
    @obj：JSON object对象 */
-int json_object_size(const json_object_t *obj);
+size_t json_object_size(const json_object_t *obj);
 
 /* 查找并返回name下的value。返回NULL代表找不到这个name。函数时间复杂度为O(log(size))
    @name：要查找的名字
@@ -80,7 +80,7 @@ json_object_for_each_prev(name, val, obj)
 ~~~c
 /* 返回JSON array的大小，即元素个数
    @arr：JSON array对象 */
-int json_array_size(const json_array_t *arr);
+size_t json_array_size(const json_array_t *arr);
 
 /* 向前或向后遍历JSON array
    @val：临时的const json_value_t *类型的JSON value对象
