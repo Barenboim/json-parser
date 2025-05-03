@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <ctype.h>
 #include <math.h>
 #include "list.h"
 #include "json_parser.h"
@@ -48,6 +47,15 @@ struct __json_element
 
 typedef struct __json_member json_member_t;
 typedef struct __json_element json_element_t;
+
+static const int __whitespace_map[256] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1,
+};
+
+#define isspace(c)	__whitespace_map[(unsigned char)(c)]
+#define isdigit(c)	((c) >= '0' && (c) <= '9')
 
 static int __json_string_length(const char *cursor, size_t *len)
 {
@@ -300,9 +308,7 @@ static int __parse_json_number(const char *cursor, const char **end,
 	if (*cursor == '-')
 		cursor++;
 
-	if (*cursor == '0')
-		cursor++;
-	else if (isdigit(*cursor))
+	if (*cursor >= '1' && *cursor <= '9')
 	{
 		mant = *cursor - '0';
 		figures = 1;
@@ -321,6 +327,8 @@ static int __parse_json_number(const char *cursor, const char **end,
 			cursor++;
 		}
 	}
+	else if (*cursor == '0')
+		cursor++;
 	else
 		return -2;
 
