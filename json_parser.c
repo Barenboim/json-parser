@@ -54,8 +54,18 @@ static const int __whitespace_map[256] = {
 	1,
 };
 
-#define isspace(c)	__whitespace_map[(unsigned char)(c)]
-#define isdigit(c)	((c) >= '0' && (c) <= '9')
+static int __json_isspace(char c)
+{
+	return __whitespace_map[(unsigned char)c];
+}
+
+static int __json_isdigit(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
+#define isspace(c)	__json_isspace(c)
+#define isdigit(c)	__json_isdigit(c)
 
 static int __json_string_length(const char *cursor, size_t *len)
 {
