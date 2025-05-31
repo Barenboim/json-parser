@@ -67,23 +67,50 @@ static int __json_isdigit(char c)
 #define isspace(c)	__json_isspace(c)
 #define isdigit(c)	__json_isdigit(c)
 
+static const int __character_map[256] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+};
+
 static int __json_string_length(const char *cursor, size_t *len)
 {
 	size_t n = 0;
 
-	while (*cursor != '\"')
+	while (1)
 	{
+		while (__character_map[(unsigned char)*cursor])
+		{
+			cursor++;
+			n++;
+		}
+
 		if (*cursor == '\\')
 		{
 			cursor++;
 			if (*cursor == '\0')
 				return -2;
-		}
-		else if ((unsigned char)*cursor < 0x20)
-			return -2;
 
-		cursor++;
-		n++;
+			cursor++;
+			n++;
+		}
+		else if (*cursor == '\"')
+			break;
+		else
+			return -2;
 	}
 
 	*len = n;
@@ -185,52 +212,57 @@ static int __parse_json_string(const char *cursor, const char **end,
 {
 	int ret;
 
-	while (*cursor != '\"')
+	while (1)
 	{
-		if (*cursor == '\\')
+		while (*cursor != '\\' && *cursor != '\"')
 		{
-			cursor++;
-			switch (*cursor)
-			{
-			case '\"':
-				*str = '\"';
-				break;
-			case '\\':
-				*str = '\\';
-				break;
-			case '/':
-				*str = '/';
-				break;
-			case 'b':
-				*str = '\b';
-				break;
-			case 'f':
-				*str = '\f';
-				break;
-			case 'n':
-				*str = '\n';
-				break;
-			case 'r':
-				*str = '\r';
-				break;
-			case 't':
-				*str = '\t';
-				break;
-			case 'u':
-				cursor++;
-				ret = __parse_json_unicode(cursor, &cursor, str);
-				if (ret < 0)
-					return ret;
-
-				str += ret;
-				continue;
-
-			default:
-				return -2;
-			}
-		}
-		else
 			*str = *cursor;
+			cursor++;
+			str++;
+		}
+
+		if (*cursor == '\"')
+			break;
+
+		cursor++;
+		switch (*cursor)
+		{
+		case '\"':
+			*str = '\"';
+			break;
+		case '\\':
+			*str = '\\';
+			break;
+		case '/':
+			*str = '/';
+			break;
+		case 'b':
+			*str = '\b';
+			break;
+		case 'f':
+			*str = '\f';
+			break;
+		case 'n':
+			*str = '\n';
+			break;
+		case 'r':
+			*str = '\r';
+			break;
+		case 't':
+			*str = '\t';
+			break;
+		case 'u':
+			cursor++;
+			ret = __parse_json_unicode(cursor, &cursor, str);
+			if (ret < 0)
+				return ret;
+
+			str += ret;
+			continue;
+
+		default:
+			return -2;
+		}
 
 		cursor++;
 		str++;
