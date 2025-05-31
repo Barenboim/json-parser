@@ -1,11 +1,11 @@
-CFLAGS = -g -Wall -std=c99
+CFLAGS = -std=c99 -Wall
 ifeq ($(DEBUG), y)
-	CFLAGS += -O0
+	CFLAGS += -O0 -g
 else
 	CFLAGS += -O2
 endif
-CC = gcc
-LD = gcc
+
+LD = cc
 
 all: test_speed parse_json
 
