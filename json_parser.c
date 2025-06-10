@@ -92,24 +92,22 @@ static int __json_string_length(const char *cursor, size_t *len)
 
 	while (1)
 	{
-		if (__character_map[(unsigned char)*cursor])
+		if (__character_map[(unsigned char)cursor[n]])
 		{
-			cursor++;
 			n++;
 			continue;
 		}
 
-		if (*cursor == '\"')
+		if (cursor[n] == '\"')
 			break;
 
-		if (*cursor != '\\')
+		if (cursor[n] != '\\')
 			return -2;
 
 		cursor++;
-		if (*cursor == '\0')
+		if (cursor[n] == '\0')
 			return -2;
 
-		cursor++;
 		n++;
 	}
 
