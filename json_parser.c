@@ -61,7 +61,7 @@ static int __json_isspace(char c)
 
 static int __json_isdigit(char c)
 {
-	return c >= '0' && c <= '9';
+	return (unsigned int)(c - '0') <= 9;
 }
 
 #define isspace(c)	__json_isspace(c)
@@ -338,35 +338,47 @@ static int __parse_json_number(const char *cursor, const char **end,
 							   double *num)
 {
 	const char *integer = cursor;
-	long long mant = 0;
-	int figures = 0;
+	unsigned int digit;
+	long long mant;
+	int figures;
 	int exp = 0;
 	double n;
 
 	if (*cursor == '-')
 		cursor++;
 
-	if (*cursor >= '1' && *cursor <= '9')
+	mant = *cursor - '0';
+	if (mant >= 1 && mant <= 9)
 	{
-		mant = *cursor - '0';
 		figures = 1;
 		cursor++;
-		while (isdigit(*cursor) && figures < 18)
+		while (1)
 		{
-			mant *= 10;
-			mant += *cursor - '0';
-			figures++;
-			cursor++;
+			digit = (unsigned int)(*cursor - '0');
+			if (digit <= 9 && figures < 18)
+			{
+				mant = 10 * mant + digit;
+				figures++;
+				cursor++;
+			}
+			else
+				break;
 		}
 
-		while (isdigit(*cursor))
+		if (digit <= 9)
 		{
-			exp++;
-			cursor++;
+			do
+			{
+				exp++;
+				cursor++;
+			} while (isdigit(*cursor));
 		}
 	}
-	else if (*cursor == '0')
+	else if (mant == 0)
+	{
+		figures = 0;
 		cursor++;
+	}
 	else
 		return -2;
 
@@ -385,17 +397,26 @@ static int __parse_json_number(const char *cursor, const char **end,
 			}
 		}
 
-		while (isdigit(*cursor) && figures < 18)
+		while (1)
 		{
-			mant *= 10;
-			mant += *cursor - '0';
-			figures++;
-			exp--;
-			cursor++;
+			digit = (unsigned int)(*cursor - '0');
+			if (digit <= 9 && figures < 18)
+			{
+				mant = 10 * mant + digit;
+				figures++;
+				exp--;
+				cursor++;
+			}
+			else
+				break;
 		}
 
-		while (isdigit(*cursor))
-			cursor++;
+		if (digit <= 9)
+		{
+			do
+				cursor++;
+			while (isdigit(*cursor));
+		}
 	}
 
 	if (cursor - integer > 1000000)
@@ -416,15 +437,24 @@ static int __parse_json_number(const char *cursor, const char **end,
 
 		e = *cursor - '0';
 		cursor++;
-		while (isdigit(*cursor) && e < 2000000)
+		while (1)
 		{
-			e *= 10;
-			e += *cursor - '0';
-			cursor++;
+			digit = (unsigned int)(*cursor - '0');
+			if (digit <= 9 && e < 2000000)
+			{
+				e = 10 * e + digit;
+				cursor++;
+			}
+			else
+				break;
 		}
 
-		while (isdigit(*cursor))
-			cursor++;
+		if (digit <= 9)
+		{
+			do
+				cursor++;
+			while (isdigit(*cursor));
+		}
 
 		if (neg)
 			e = -e;
