@@ -127,12 +127,14 @@ static int __parse_json_hex4(const char *cursor, const char **end,
 		hex = *cursor;
 		if (hex >= '0' && hex <= '9')
 			hex = hex - '0';
-		else if (hex >= 'A' && hex <= 'F')
-			hex = hex - 'A' + 10;
-		else if (hex >= 'a' && hex <= 'f')
-			hex = hex - 'a' + 10;
 		else
-			return -2;
+		{
+			hex |= 0x20;
+			if (hex >= 'a' && hex <= 'f')
+				hex = hex - 'a' + 10;
+			else
+				return -2;
+		}
 
 		*code = (*code << 4) + hex;
 		cursor++;
