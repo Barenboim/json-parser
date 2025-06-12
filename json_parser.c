@@ -367,13 +367,10 @@ static int __parse_json_number(const char *cursor, const char **end,
 				break;
 		}
 
-		if (digit <= 9)
+		while (isdigit(*cursor))
 		{
-			do
-			{
-				exp++;
-				cursor++;
-			} while (isdigit(*cursor));
+			exp++;
+			cursor++;
 		}
 	}
 	else if (mant == 0)
@@ -413,12 +410,8 @@ static int __parse_json_number(const char *cursor, const char **end,
 				break;
 		}
 
-		if (digit <= 9)
-		{
-			do
-				cursor++;
-			while (isdigit(*cursor));
-		}
+		while (isdigit(*cursor))
+			cursor++;
 	}
 
 	if (cursor - integer > 1000000)
@@ -451,12 +444,8 @@ static int __parse_json_number(const char *cursor, const char **end,
 				break;
 		}
 
-		if (digit <= 9)
-		{
-			do
-				cursor++;
-			while (isdigit(*cursor));
-		}
+		while (isdigit(*cursor))
+			cursor++;
 
 		if (neg)
 			e = -e;
