@@ -496,19 +496,25 @@ static int __parse_json_number(const char *cursor, const char **end,
 	n = mant;
 	if (exp != 0 && figures != 0)
 	{
-		if (exp > 291)
-			n = INFINITY;
-		else if (exp > 0)
-			n *= __power_of_10[exp];
-		else if (exp > -309)
-			n /= __power_of_10[-exp];
-		else if (exp > -324 - figures)
+		if (exp > 0)
 		{
-			n /= __power_of_10[-exp - 308];
-			n /= __power_of_10[308];
+			if (exp > 291)
+				n = INFINITY;
+			else
+				n *= __power_of_10[exp];
 		}
 		else
-			n = 0.0;
+		{
+			if (exp > -309)
+				n /= __power_of_10[-exp];
+			else if (exp > -324 - figures)
+			{
+				n /= __power_of_10[-exp - 308];
+				n /= __power_of_10[308];
+			}
+			else
+				n = 0.0;
+		}
 	}
 
 	if (minus)
