@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(json-parser VERSION 1.5.2)
+project(json-parser VERSION 1.5.3)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)

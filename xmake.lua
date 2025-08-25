@@ -1,5 +1,5 @@
 set_project("json-parser")
-set_version("1.5.2")
+set_version("1.5.3")
 
 if is_mode("release") then
     set_optimize("faster")
