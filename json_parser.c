@@ -68,36 +68,88 @@ static int __json_isdigit(char c)
 #define isdigit(c)	__json_isdigit(c)
 
 static const int __character_map[256] = {
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
+
+static size_t __json_utf8_length(const char *utf8)
+{
+	const unsigned char *p = (const unsigned char *)utf8;
+	unsigned char low;
+	unsigned char high;
+
+	while (*p >= 0x80)
+	{
+		if (p[0] < 0xe0)
+		{
+			if (p[0] >= 0xc2 && (p[1] & 0xc0) == 0x80)
+				p += 2;
+			else
+				break;
+		}
+		else if (p[0] < 0xf0)
+		{
+			low = p[0] == 0xe0 ? 0xa0 : 0x80;
+			high = p[0] == 0xed ? 0x9f : 0xbf;
+			if (p[1] >= low && p[1] <= high && (p[2] & 0xc0) == 0x80)
+				p += 3;
+			else
+				break;
+		}
+		else
+		{
+			low = p[0] == 0xf0 ? 0x90 : 0x80;
+			high = p[0] == 0xf4 ? 0x8f : 0xbf;
+			if (p[0] <= 0xf4 && p[1] >= low && p[1] <= high &&
+				(p[2] & 0xc0) == 0x80 && (p[3] & 0xc0) == 0x80)
+			{
+				p += 4;
+			}
+			else
+				break;
+		}
+	}
+
+	return (const char *)p - utf8;
+}
 
 static int __json_string_length(const char *cursor, size_t *escape, size_t *len)
 {
 	size_t esc = 0;
 	size_t n = 0;
+	size_t l;
 
 	while (1)
 	{
-		while (__character_map[(unsigned char)cursor[n]] == 0)
+		while (__character_map[(unsigned char)cursor[n]])
 			n++;
 
 		if (cursor[n] == '\"')
 			break;
 
-		if (cursor[n] != '\\')
-			return -2;
+		if (cursor[n] == '\\')
+		{
+			cursor++;
+			if (cursor[n] == '\0')
+				return -2;
 
-		cursor++;
-		if (cursor[n] == '\0')
-			return -2;
+			esc++;
+			n++;
+		}
+		else
+		{
+			l = __json_utf8_length(&cursor[n]);
+			if (l == 0)
+				return -2;
 
-		esc++;
-		n++;
+			n += l;
+		}
 	}
 
 	*escape = esc;
