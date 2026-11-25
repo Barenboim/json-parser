@@ -119,7 +119,7 @@ static size_t __json_utf8_length(const unsigned char *utf8)
 	return p - utf8;
 }
 
-static int __json_string_length(const char *str, size_t *esc, size_t *len)
+static size_t __json_string_length(const char *str, size_t *esc)
 {
 	const unsigned char *p = (const unsigned char *)str;
 	size_t n = 0;
@@ -127,33 +127,32 @@ static int __json_string_length(const char *str, size_t *esc, size_t *len)
 
 	while (1)
 	{
-		while (__character_map[p[n]])
-			n++;
+		while (__character_map[*p])
+			p++;
 
-		if (p[n] == '\"')
+		if (*p == '\"')
 			break;
 
-		if (p[n] == '\\')
+		if (*p == '\\')
 		{
-			p++;
-			if (p[n] == '\0')
-				return -2;
+			if (p[1] == '\0')
+				return (size_t)-1;
 
 			n++;
+			p += 2;
 		}
 		else
 		{
-			l = __json_utf8_length(&p[n]);
+			l = __json_utf8_length(p);
 			if (l == 0)
-				return -2;
+				return (size_t)-1;
 
-			n += l;
+			p += l;
 		}
 	}
 
-	*esc = (const char *)p - str;
-	*len = n;
-	return 0;
+	*esc = n;
+	return (const char *)p - str - n;
 }
 
 static int __parse_json_hex4(const char *cursor, const char **end,
@@ -630,9 +629,9 @@ static int __parse_json_members(const char *cursor, const char **end,
 			return -2;
 
 		cursor++;
-		ret = __json_string_length(cursor, &esc, &len);
-		if (ret < 0)
-			return ret;
+		len = __json_string_length(cursor, &esc);
+		if (len == (size_t)-1)
+			return -2;
 
 		memb = (json_member_t *)malloc(offsetof(json_member_t, name) + len + 1);
 		if (!memb)
@@ -793,9 +792,9 @@ static int __parse_json_value(const char *cursor, const char **end,
 	{
 	case '\"':
 		cursor++;
-		ret = __json_string_length(cursor, &esc, &len);
-		if (ret < 0)
-			return ret;
+		len = __json_string_length(cursor, &esc);
+		if (len == (size_t)-1)
+			return -2;
 
 		val->value.string = (char *)malloc(len + 1);
 		if (!val->value.string)
