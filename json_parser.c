@@ -127,7 +127,18 @@ static size_t __json_string_length(const char *str, size_t *esc)
 
 	while (1)
 	{
-		while (__character_map[*p])
+		while (__character_map[p[0]] && __character_map[p[1]])
+		{
+			if (__character_map[p[2]] && __character_map[p[3]])
+				p += 4;
+			else
+			{
+				p += 2;
+				break;
+			}
+		}
+
+		if (__character_map[*p])
 			p++;
 
 		if (*p == '\"')
