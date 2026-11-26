@@ -624,7 +624,8 @@ static int __parse_json_members(const char *cursor, const char **end,
 								int depth, json_object_t *obj)
 {
 	json_member_t *memb;
-	size_t esc, len;
+	size_t esc;
+	size_t len;
 	int ret;
 
 	while (isspace(*cursor))
@@ -798,7 +799,8 @@ static int __parse_json_array(const char *cursor, const char **end,
 static int __parse_json_value(const char *cursor, const char **end,
 							  int depth, json_value_t *val)
 {
-	size_t esc, len;
+	size_t esc;
+	size_t len;
 	int ret;
 
 	switch (*cursor)
