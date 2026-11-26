@@ -320,19 +320,21 @@ static int __parse_json_string(const char *cursor, const char **end,
 		str++;
 	}
 
-	while (cursor[0] != '\"' && cursor[1] != '\"' &&
-		   cursor[2] != '\"' && cursor[3] != '\"')
+	while (cursor[0] != '\"' && cursor[1] != '\"')
 	{
-		memcpy(str, cursor, 4);
-		cursor += 4;
-		str += 4;
-	}
-
-	if (cursor[0] != '\"' && cursor[1] != '\"')
-	{
-		memcpy(str, cursor, 2);
-		cursor += 2;
-		str += 2;
+		if (cursor[2] != '\"' && cursor[3] != '\"')
+		{
+			memcpy(str, cursor, 4);
+			cursor += 4;
+			str += 4;
+		}
+		else
+		{
+			memcpy(str, cursor, 2);
+			cursor += 2;
+			str += 2;
+			break;
+		}
 	}
 
 	if (*cursor != '\"')
