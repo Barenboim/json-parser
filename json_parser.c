@@ -68,41 +68,102 @@ static int __json_isdigit(char c)
 #define isdigit(c)	__json_isdigit(c)
 
 static const int __character_map[256] = {
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+	1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
 
-static int __json_string_length(const char *cursor, size_t *escape, size_t *len)
+static size_t __json_utf8_length(const unsigned char *utf8)
 {
-	size_t esc = 0;
+	const unsigned char *p = utf8;
+	unsigned char low;
+	unsigned char high;
+
+	while (*p >= 0x80)
+	{
+		if (p[0] <= 0xdf)
+		{
+			if (p[0] >= 0xc2 && (p[1] & 0xc0) == 0x80)
+				p += 2;
+			else
+				break;
+		}
+		else if (p[0] <= 0xef)
+		{
+			low = p[0] == 0xe0 ? 0xa0 : 0x80;
+			high = p[0] == 0xed ? 0x9f : 0xbf;
+			if (p[1] >= low && p[1] <= high && (p[2] & 0xc0) == 0x80)
+				p += 3;
+			else
+				break;
+		}
+		else
+		{
+			low = p[0] == 0xf0 ? 0x90 : 0x80;
+			high = p[0] == 0xf4 ? 0x8f : 0xbf;
+			if (p[0] <= 0xf4 && p[1] >= low && p[1] <= high &&
+				(p[2] & 0xc0) == 0x80 && (p[3] & 0xc0) == 0x80)
+			{
+				p += 4;
+			}
+			else
+				break;
+		}
+	}
+
+	return p - utf8;
+}
+
+static size_t __json_string_length(const char *str, size_t *esc)
+{
+	const unsigned char *p = (const unsigned char *)str;
 	size_t n = 0;
+	size_t l;
 
 	while (1)
 	{
-		while (__character_map[(unsigned char)cursor[n]] == 0)
-			n++;
+		while (__character_map[p[0]] && __character_map[p[1]])
+		{
+			if (__character_map[p[2]] && __character_map[p[3]])
+				p += 4;
+			else
+			{
+				p += 2;
+				break;
+			}
+		}
 
-		if (cursor[n] == '\"')
+		if (__character_map[*p])
+			p++;
+
+		if (*p == '\"')
 			break;
 
-		if (cursor[n] != '\\')
-			return -2;
+		if (*p == '\\')
+		{
+			if (p[1] == '\0')
+				return (size_t)-1;
 
-		cursor++;
-		if (cursor[n] == '\0')
-			return -2;
+			n++;
+			p += 2;
+		}
+		else
+		{
+			l = __json_utf8_length(p);
+			if (l == 0)
+				return (size_t)-1;
 
-		esc++;
-		n++;
+			p += l;
+		}
 	}
 
-	*escape = esc;
-	*len = n;
-	return 0;
+	*esc = n;
+	return (const char *)p - str - n;
 }
 
 static int __parse_json_hex4(const char *cursor, const char **end,
@@ -135,7 +196,7 @@ static int __parse_json_hex4(const char *cursor, const char **end,
 }
 
 static int __parse_json_unicode(const char *cursor, const char **end,
-								char *utf8)
+								unsigned char *utf8)
 {
 	unsigned int code;
 	unsigned int next;
@@ -198,11 +259,11 @@ static int __parse_json_unicode(const char *cursor, const char **end,
 }
 
 static int __parse_json_string(const char *cursor, const char **end,
-							   size_t escape, char *str)
+							   size_t esc, char *str)
 {
 	int ret;
 
-	while (escape > 0)
+	while (esc > 0)
 	{
 		while (*cursor != '\\')
 		{
@@ -211,7 +272,7 @@ static int __parse_json_string(const char *cursor, const char **end,
 			str++;
 		}
 
-		escape--;
+		esc--;
 		cursor++;
 		switch (*cursor)
 		{
@@ -241,12 +302,12 @@ static int __parse_json_string(const char *cursor, const char **end,
 			break;
 		case 'u':
 			cursor++;
-			ret = __parse_json_unicode(cursor, &cursor, str);
+			ret = __parse_json_unicode(cursor, &cursor, (unsigned char *)str);
 			if (ret < 0)
 				return ret;
 
 			if (ret == 4)
-				escape--;
+				esc--;
 
 			str += ret;
 			continue;
@@ -259,19 +320,21 @@ static int __parse_json_string(const char *cursor, const char **end,
 		str++;
 	}
 
-	while (cursor[0] != '\"' && cursor[1] != '\"' &&
-		   cursor[2] != '\"' && cursor[3] != '\"')
+	while (cursor[0] != '\"' && cursor[1] != '\"')
 	{
-		memcpy(str, cursor, 4);
-		cursor += 4;
-		str += 4;
-	}
-
-	if (cursor[0] != '\"' && cursor[1] != '\"')
-	{
-		memcpy(str, cursor, 2);
-		cursor += 2;
-		str += 2;
+		if (cursor[2] != '\"' && cursor[3] != '\"')
+		{
+			memcpy(str, cursor, 4);
+			cursor += 4;
+			str += 4;
+		}
+		else
+		{
+			memcpy(str, cursor, 2);
+			cursor += 2;
+			str += 2;
+			break;
+		}
 	}
 
 	if (*cursor != '\"')
@@ -521,14 +584,14 @@ static int __parse_json_value(const char *cursor, const char **end,
 static void __destroy_json_value(json_value_t *val);
 
 static int __parse_json_member(const char *cursor, const char **end,
-							   size_t escape, size_t len,
+							   size_t esc, size_t len,
 							   int depth, json_member_t *memb)
 {
 	int ret;
 
-	if (escape != 0)
+	if (esc != 0)
 	{
-		ret = __parse_json_string(cursor, &cursor, escape, memb->name);
+		ret = __parse_json_string(cursor, &cursor, esc, memb->name);
 		if (ret < 0)
 			return ret;
 	}
@@ -561,7 +624,7 @@ static int __parse_json_members(const char *cursor, const char **end,
 								int depth, json_object_t *obj)
 {
 	json_member_t *memb;
-	size_t escape;
+	size_t esc;
 	size_t len;
 	int ret;
 
@@ -580,15 +643,15 @@ static int __parse_json_members(const char *cursor, const char **end,
 			return -2;
 
 		cursor++;
-		ret = __json_string_length(cursor, &escape, &len);
-		if (ret < 0)
-			return ret;
+		len = __json_string_length(cursor, &esc);
+		if (len == (size_t)-1)
+			return -2;
 
 		memb = (json_member_t *)malloc(offsetof(json_member_t, name) + len + 1);
 		if (!memb)
 			return -1;
 
-		ret = __parse_json_member(cursor, &cursor, escape, len, depth, memb);
+		ret = __parse_json_member(cursor, &cursor, esc, len, depth, memb);
 		if (ret < 0)
 		{
 			free(memb);
@@ -736,7 +799,7 @@ static int __parse_json_array(const char *cursor, const char **end,
 static int __parse_json_value(const char *cursor, const char **end,
 							  int depth, json_value_t *val)
 {
-	size_t escape;
+	size_t esc;
 	size_t len;
 	int ret;
 
@@ -744,17 +807,17 @@ static int __parse_json_value(const char *cursor, const char **end,
 	{
 	case '\"':
 		cursor++;
-		ret = __json_string_length(cursor, &escape, &len);
-		if (ret < 0)
-			return ret;
+		len = __json_string_length(cursor, &esc);
+		if (len == (size_t)-1)
+			return -2;
 
 		val->value.string = (char *)malloc(len + 1);
 		if (!val->value.string)
 			return -1;
 
-		if (escape != 0)
+		if (esc != 0)
 		{
-			ret = __parse_json_string(cursor, end, escape, val->value.string);
+			ret = __parse_json_string(cursor, end, esc, val->value.string);
 			if (ret < 0)
 			{
 				free(val->value.string);
